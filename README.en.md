@@ -18,7 +18,7 @@ English | [中文](README.md)
 A plugin for [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) (dsh):
 **zero runtime dependencies, no build step, no install hooks.**
 
-| 12 roles | 9 phases | 92 test files | 0 runtime deps | 0 build steps |
+| 12 roles | 9 phases | 93 test files | 0 runtime deps | 0 build steps |
 |---|---|---|---|---|
 | own child preset (persona + tool boundary) / `maxDepth: 1` | 1 hard gate + 1 approval gate | CI runs the full suite on every push | `dependencies: {}` | no bundler, no `prepare` hook |
 
@@ -193,7 +193,7 @@ A persistent status bar also sits directly above the chat input box (client slot
 | `?section=summary` response | median **3.5–5.8 ms** | real machine (1.3.20+); 95 sub-agents / 13 `STATE.members` / 104 tasks |
 | `?section=people,feed` response | **4–13 ms** (was ~280 ms/call on 1.3.19, about **70×**) | same; the speed-up did **not** come from dropping members (`agents`/`stateMembers` counts unchanged) |
 | Worst historical (fixed in 1.3.5) | 7.1–9.8 s warm, **283.6 s** cold | before 1.3.5: `/state` read 75 sub-session logs in full and blocked the `dsh web` event loop |
-| Tests | **92 test files** | `npm run test:all`, zero dependencies, no `install` needed (this is what CI runs) |
+| Tests | **93 test files** | `npm run test:all`, zero dependencies, no `install` needed (this is what CI runs) |
 
 All figures are real-machine measurements; absolute values depend on machine load, so **numbers taken under different
 load are not directly comparable**. `state-perf-guard.test.mjs` keeps performance from regressing.
@@ -448,7 +448,7 @@ evolve with the skill, without shipping a new package.
 
 - **Two rules are moved onto the host's `tools/post-execute` waterfall** (`lib/interception.js`): the "task-ledger contract" — duplicate ids / cycles / self-dependencies are rejected on the spot (`HARD_GRAPH_CODES`) — and the "spec boundary" — an empty SPEC boundary section cannot enter `implement` (`SPEC_COMPLETE_PHASES`). **Silence in the spec means permission, and that is the number-one source of rework.**
 - **The write-side ownership gate** sits on `tools/pre-execute` (`lib/artifact-ownership.js`): creating is allowed, overwriting another role's artifact is rejected outright; **a role holding `bash` can still bypass it** (listed under [Fit and boundaries](#fit-and-boundaries)).
-- **92 test files plus a 176-entry mutation catalog**: `npm run test:all` needs no `install` (it is what CI runs). In CI the catalog validates its **shape** (unique ids, each mutant `find` string matching exactly once in its target file, entry count matching the constant); **mutants must be injected by hand** and **CI does not execute them today** ⇒ it guards against drift and typos, it is **not** an automatic proof that the suite catches errors.
+- **93 test files plus a 176-entry mutation catalog**: `npm run test:all` needs no `install` (it is what CI runs). In CI the catalog validates its **shape** (unique ids, each mutant `find` string matching exactly once in its target file, entry count matching the constant); **mutants must be injected by hand** and **CI does not execute them today** ⇒ it guards against drift and typos, it is **not** an automatic proof that the suite catches errors.
 - **Several ratchet tests**: `vocab-consistency` (one source for vocabulary and role labels), `scan-single-source` (no fact with two homes), `write-bypass-ratchet` (no write path may bypass interception), `settings-consumers` (every setting must have a consumer; the allow-list is compared as a set, so it can only shrink), `state-perf-guard` (sub-session timing must perform **zero** log reads).
 - **Two kinds of zero, kept apart**: "I don't know what exists" must not look like "there is nothing" — a failed tool-face narrowing distinguishes `no-known-names` from `nothing-to-deny`, and when `/state` cannot obtain a timestamp it returns `hasTimestamp: false` instead of passing `0` off as a measurement.
 - **Failures must be loud**: out-of-bounds writes, artifact divergence and over-budget rework always raise an explicit error; nothing is truncated silently — silent failure is the most expensive bug class in this repo.
@@ -456,7 +456,7 @@ evolve with the skill, without shipping a new package.
 ## Development
 
 ```sh
-npm run test:all        # 92 test files, zero dependencies, no install needed (this is what CI runs)
+npm run test:all        # 93 test files, zero dependencies, no install needed (this is what CI runs)
 npm run rename <name>   # after forking: full-tree scan, syncs every package-name spelling (dry run lists them)
 npm run check:name      # check for leftover placeholder package names
 ```
