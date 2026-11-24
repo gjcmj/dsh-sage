@@ -16,7 +16,7 @@
 
 装在 [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 上的 dsh 插件：**零运行时依赖、无构建步骤、无安装钩子**。
 
-| 12 角色 | 9 阶段 | 90 个测试文件 | 0 运行时依赖 | 0 构建步骤 |
+| 12 角色 | 9 阶段 | 92 个测试文件 | 0 运行时依赖 | 0 构建步骤 |
 |---|---|---|---|---|
 | 各带角色子预设（persona + 工具边界）/ `maxDepth: 1` | 含 1 道硬门 + 1 道确认门 | CI 每次 push 跑全套测试 | `dependencies: {}` | 无 bundler、无 `prepare` 钩子 |
 
@@ -173,7 +173,7 @@ $ /team 做一个带登录的支付模块
 | `?section=summary` 响应 | 中位 **3.5–5.8 ms** | 真机（1.3.20 起）；95 个子代理 / 13 条 `STATE.members` / 104 个任务 |
 | `?section=people,feed` 响应 | **4–13 ms**（1.3.19 为 ~280 ms/次，约 **70×**） | 同上；提速**没有靠丢成员**（`agents`/`stateMembers` 数量不变） |
 | 历史最差（1.3.5 已修） | 热态 7.1–9.8 s、冷态 **283.6 s** | 1.3.5 之前：`/state` 逐条全量读 75 个子会话日志，并堵住 `dsh web` 事件循环 |
-| 测试 | **90 个测试文件** | `npm run test:all`，零依赖、无需 `install`（CI 跑的就是它） |
+| 测试 | **92 个测试文件** | `npm run test:all`，零依赖、无需 `install`（CI 跑的就是它） |
 
 以上都是**真机实测**；机器负载会影响绝对值，**不同负载下的数字不可直接比**。`state-perf-guard.test.mjs` 守着性能不许回退。
 
@@ -404,7 +404,7 @@ presets/               preset 补丁：lead preset + 12 份角色子预设（bun
 
 - **两条规则被搬到宿主 `tools/post-execute` 瀑布上**（`lib/interception.js`）：「台账契约」——重复 id / 环 / 自依赖当场顶回（`HARD_GRAPH_CODES`）；「规格边界」——SPEC 未填不许进实现（`SPEC_COMPLETE_PHASES`）。**规格沉默等于允许，那正是头号返工源。**
 - **写侧归属门禁**挂在 `tools/pre-execute`（`lib/artifact-ownership.js`）：创建放行、覆写他人工件当场拒绝；**持 `bash` 的角色仍可能绕过**（已列进[适用性与边界](#适用性与边界)）。
-- **90 个测试文件 + 176 条变异目录**：`npm run test:all` 零依赖、无需 `install`（CI 跑的就是它）。变异目录在 CI 里校验的是**形状**（id 唯一、每个变异体的 `find` 串在目标文件里恰好命中一次、条数与常量一致）；**变异体本身需手动注入**，**CI 目前不执行变异体** ⇒ 它是"防呆 + 防漂移"，**不是**"自动证明测试能抓错"。
+- **92 个测试文件 + 176 条变异目录**：`npm run test:all` 零依赖、无需 `install`（CI 跑的就是它）。变异目录在 CI 里校验的是**形状**（id 唯一、每个变异体的 `find` 串在目标文件里恰好命中一次、条数与常量一致）；**变异体本身需手动注入**，**CI 目前不执行变异体** ⇒ 它是"防呆 + 防漂移"，**不是**"自动证明测试能抓错"。
 - **多组棘轮（ratchet）**：`vocab-consistency`（术语与角色标签单一真源）、`scan-single-source`（同一事实不许有两个家）、`write-bypass-ratchet`（写侧不许绕过拦截）、`settings-consumers`（每个设置项都必须有消费者，白名单集合相等 ⇒ 只减不增）、`state-perf-guard`（子会话计时**零次**读日志，性能回归即红）。
 - **两种零要分得清**："我不知道有什么"与"确实没有"不长成同一个样子 —— 工具面收窄失败时区分 `no-known-names` / `nothing-to-deny`；`/state` 取不到时间戳时给 `hasTimestamp: false`，而不是用 `0` 冒充。
 - **失败必须出声**：写侧越界、工件分叉、超轮次返工一律**显式报错**，不做静默截断 —— 静默失败是本仓最贵的 bug 类型。
@@ -412,7 +412,7 @@ presets/               preset 补丁：lead preset + 12 份角色子预设（bun
 ## 开发
 
 ```sh
-npm run test:all        # 90 个测试文件，零依赖、无需 install（CI 跑的就是它）
+npm run test:all        # 92 个测试文件，零依赖、无需 install（CI 跑的就是它）
 npm run rename <新包名>  # fork 后改名：全树扫描并同步所有包名写法（预演会列出命中文件与写法）
 npm run check:name      # 检查占位包名残留
 ```
