@@ -4,7 +4,12 @@
 // 不是裸 id；④ 没有项目工件 ⇒ isProject=false（dock 不渲染）。
 // 运行：node project-view.test.mjs
 
+import { readFile } from "node:fs/promises";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { projectPayload, nextText } from "./lib/project-view.js";
+
+const here = dirname(fileURLToPath(import.meta.url));
 
 let fail = 0;
 const check = (ok, name, detail) => {
@@ -48,7 +53,13 @@ check(empty.ok === false && empty.isProject === false, "null ⇒ 不可用");
 const legacy = projectPayload({ isProject: false, stage: "K1", steps: {}, gates: {} });
 check(legacy.isProject === false && legacy.stage === "K1", "legacy 有阶段但 isProject=false（dock 不渲染）");
 
-console.log("\n③ nextText");
+console.log("\n③ 接线（源码级：驾驶舱顶部条真的挂上了）");
+const clientSrc = await readFile(join(here, "client.js"), "utf8");
+check(clientSrc.includes("viewMode ? h(ProjectStrip"), "conversation.view 顶部插入了 ProjectStrip");
+check(clientSrc.includes("function ProjectStrip") && clientSrc.includes("exp-projstrip"), "ProjectStrip 组件与样式在场");
+check(clientSrc.includes("/plugins/dsh-expert-team/project"), "dock 与 strip 共用同一条项目链路由");
+
+console.log("\n④ nextText");
 check(nextText({ next: null }) === "", "没有下一步 ⇒ 空串");
 check(nextText({ next: { id: "G4", label: "立项", missing: [] } }) === "立项", "无缺项只给标签");
 
