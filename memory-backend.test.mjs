@@ -2405,8 +2405,8 @@ console.log('\n⑪ off 之后补丁里那个 mcp-midas 行还在（一键移除 
     // （`routes-shared.test.mjs` 也钉这一条；这里再钉一次是为了让"顺手新开一条路由"在**本节**就红。）
     const routeSites = (cmdSrc.match(/registerLocal\(\{/g) || []).length;
     const routeMethods = (cmdSrc.match(/^            methods: \[/gm) || []).length;
-    check(routeSites === 15 && routeMethods === 15,
-      '路由条数仍是**恰好 15**（`registerLocal(` 与 `methods: [` 各 15）—— 本动作挂在**既有**路由上，一条都没多',
+    check(routeSites === 16 && routeMethods === 16,
+      '路由条数仍是**恰好 16**（`registerLocal(` 与 `methods: [` 各 16）—— 本项目链动作新增 1 条只读路由，其余挂在既有路由上',
       `registerLocal=${routeSites} / methods=${routeMethods}`);
   }
 
