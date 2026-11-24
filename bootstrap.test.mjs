@@ -80,6 +80,7 @@ console.log('\n② 无 skill 注册表时：回退到复制，并写版本戳 + 
   const target = await _live.ensureSkillInstalled();
   check(target === skillDst, '返回复制目标路径', String(target));
   check(await exists(join(skillDst, 'SKILL.md')), 'SKILL.md 已铺到 $DSH_HOME/skills');
+  for (const n of ['kickoff', 'discovery', 'prd']) check(await exists(join(home, 'skills', n, 'SKILL.md')), '项目级 skill 也已铺：' + n);
   check((await readFile(join(skillDst, _live.INSTALL_STAMP), 'utf8')).trim() === _live.PLUGIN_VERSION, `版本戳 = ${_live.PLUGIN_VERSION}`, '');
   const rec = JSON.parse(await readFile(manifestPath, 'utf8'));
   check(rec.skill && rec.skill.path === skillDst, '清单里登记了 skill 副本（卸载据此回收）', JSON.stringify(rec.skill));
@@ -141,16 +142,16 @@ console.log('\n⑤ 卸载：只回收"本插件的副本"，别的都留着');
 
 console.log('\n⑥ 宿主提供 skill 注册表时：走运行时注册，一个 skill 文件都不写');
 {
-  let captured = null;
+  let captured = [];
   const ctx = {
     commands: { register: () => {} },
     on: () => {},
     effect: (fn) => { try { fn(); } catch { /* 忽略 */ } },
     inject: () => {},
-    get: (k) => (k === 'skills' ? { register: (skill) => { captured = skill; return () => {}; } } : undefined),
+    get: (k) => (k === 'skills' ? { register: (skill) => { captured.push(skill); return () => {}; } } : undefined),
   };
   apply(ctx, {});
-  check(captured && captured.name === 'expert-team', 'apply() 把 skill 注册进了 ctx.skills', String(captured && captured.name));
+  check(captured.length === 4 && captured.some((s) => s.name === 'expert-team'), 'apply() 把四份 skill 都注册进了 ctx.skills（expert-team + kickoff/discovery/prd）', captured.map((s) => s.name).join(','));
   check(_live.runtimeSkillRegistered() === true, '内部标记已置位（后续不再复制）');
   check(!(await exists(skillDst)), '没有任何 skill 文件被写到 $DSH_HOME（这就是"卸载即干净"）');
 
