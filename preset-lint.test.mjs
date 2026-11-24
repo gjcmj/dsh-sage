@@ -101,7 +101,8 @@ ${agentOptions}
   check(leadRow.includes('SUMMARY.md') && leadRow.includes('任务看板.md'),
     '覆盖 lead 自己写的两份工件正文（与 SKILL.md 的从属表述同口径）');
   check(leadRow.includes('保持原样不翻译'), '技术标识 / 引用原文的例外仍在');
-  check(leadRow.includes('{{model}}') && leadRow.includes('{{cwd}}'), '模板变量 {{model}}/{{cwd}} 未被吃掉');
+  check(leadRow.includes('{{model}}') && !leadRow.includes('{{cwd}}') && leadRow.includes('session workspace root'),
+    '只保留宿主已注册的 {{model}}；{{cwd}} 已去掉（未注册变量会让每条消息报错）');
 
   console.log('\n⓪-b lead 的选择必须可点击（ask_user_question + options）');
   check(leadRow.includes('【交互】'), 'lead persona 带【交互】约束');

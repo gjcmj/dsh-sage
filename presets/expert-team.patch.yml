@@ -26,7 +26,8 @@
         order: 5
         plugins:
           # ── identity ──────────────────────────────────────────────────────
-          # {{model}} and {{cwd}} resolve from the agent's own route and workspace.
+          # {{model}} resolves from the agent route; the working-directory line is static text
+          # because the host registers no {{cwd}} variable (an unresolved one fails every message).
           # The 【语言】/【交互】contracts live here because the persona is the ONLY
           # always-on prompt channel: a lead that never loads the skill still has
           # to answer in Chinese and still has to make choices clickable.
@@ -43,7 +44,7 @@
                 授权申请），必须用 ask_user_question 工具把候选项做成**可点击选项**：每个选项带
                 label 与 description，推荐项排在第一个并在 description 里标注「推荐」。
                 不得把选项写成「回复 A 或 B」「1. X 2. Y」这类纯文本；用户点选后才算拍板。
-              suffix: Your working directory is {{cwd}}.
+              suffix: Your working directory is the session workspace root.
 
           - id: agent-instructions
             name: '@deepseek-ai/dsh-agent-instructions'
