@@ -44,6 +44,7 @@ check(p.gates.G1 === true && p.gates.G2 === false, "门禁原样透出");
 check(p.steps.length === 6, "步骤数一致", String(p.steps.length));
 check(p.steps[5].skipped === true && p.steps[5].reason === "小项目", "skip 保留理由，不当成 ✓");
 check(p.dock.includes("章程定稿✓") && p.dock.includes("原型评审(skip)"), "dock 行含完成与 skip", p.dock);
+check(p.dock.includes("产品定义进行中") && p.dock.includes("立项待办"), "只有当前步是进行中，后面是待办", p.dock);
 check(p.next.includes("产品定义") && p.next.includes("缺："), "下一步是人话 + 缺项", p.next);
 check(p.agents.devMode === false, "AGENTS 版本透出");
 
