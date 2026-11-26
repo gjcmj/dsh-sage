@@ -2268,9 +2268,9 @@ window.__ModuleLoader__.load({
           }
           // 状态徽标：让「开着还是关着」不用去读复选框/下拉的当前值。
           var stateText = '', stateCls = ''
-          if (r.type === 'bool') {
-            if (r.nullable) { stateText = r.value === null ? t('按预设', 'preset') : (r.value ? t('开启', 'on') : t('关闭', 'off')); stateCls = r.value === null ? ' preset' : (r.value ? ' on' : ' off') }
-            else { stateText = r.value ? t('已开启', 'on') : t('已关闭', 'off'); stateCls = r.value ? ' on' : ' off' }
+          if (r.type === 'bool' && !r.nullable) {
+            // 可空开关的状态已经由下拉本身显示，再加徽标只是重复；复选框才需要徽标兜底。
+            stateText = r.value ? t('已开启', 'on') : t('已关闭', 'off'); stateCls = r.value ? ' on' : ' off'
           }
           // 说明过长（>120 字）就让这一行换行、说明独占一行 —— 否则它会被控件列挤成一条
           // 又窄又高的文字柱（真机截图里「记忆后端」那行就是这样）。阈值取 120：spec 里现存的
