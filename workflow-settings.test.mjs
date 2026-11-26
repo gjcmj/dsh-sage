@@ -90,5 +90,12 @@ console.log("\n⑧ 显式关闭优先于预设");
 const s3 = deriveWorkflowState(root, { settings: { workflow: { preset: "internal-platform", techPlan: false } } });
 check(s3.phases.find((p) => p.id === "tech-plan").skipped === true, "显式 false 覆盖预设默认");
 
+console.log("\n⑨ 软前置接线（源码级）");
+const src = await (await import("node:fs/promises")).readFile(join(import.meta.dirname || ".", "lib", "command.js"), "utf8");
+check(src.includes("wcfg.strict === true"), "R1 建 run 读严格模式开关");
+check(src.includes("mode.r1Warn"), "严格模式关时只提示（r1Warn）");
+check(src.includes("runKinds") && src.includes("run 种类「"), "run 种类未启用 ⇒ 拒绝并指向设置");
+check(src.includes("strict: ((currentSettings() || {}).workflow || {}).strict === true"), "R2 守卫读严格模式开关");
+
 if (fail) { console.error("\n✗ 失败 " + fail + " 项"); process.exit(1); }
 console.log("\n✓ 全部通过");

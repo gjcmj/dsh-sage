@@ -48,11 +48,14 @@ const execSrc = { name: "write", arguments: { file_path: "src/app.js" } };
 const nextAllow = async () => ({ kind: "allow" });
 
 console.log("\n④ 守卫");
-const g1 = makeGuard(DRAFT);
+const g1 = makeGuard(DRAFT, { strict: true });
 const d1 = await g1.guard(execSrc, nextAllow);
 check(d1.kind === "deny", "未定稿 ⇒ deny", d1.kind);
 check(String(d1.reason).includes("缺项"), "理由带缺项", String(d1.reason).slice(0, 50));
 check(g1.events.includes("production-denied"), "拒绝被留痕");
+const g0 = makeGuard(DRAFT);
+check((await g0.guard(execSrc, nextAllow)).kind === "allow", "默认（严格模式关）⇒ 只提示不拦截");
+check(g0.events.includes("production-warn"), "提示被留痕（不是静默放行）");
 const g2 = makeGuard(FINAL_DEV);
 check((await g2.guard(execSrc, nextAllow)).kind === "allow", "定稿+开发版 ⇒ 放行");
 check((await makeGuard(DRAFT).guard({ name: "write", arguments: { file_path: "docs/readme.md" } }, nextAllow)).kind === "allow", "非 src 不拦");
