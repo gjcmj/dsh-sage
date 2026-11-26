@@ -228,6 +228,21 @@ window.__ModuleLoader__.load({
       // 只影响真正过长的两行，其余行的版面一个像素都不动。
       '.exp-settings-row-wide{flex-wrap:wrap}' +
       '.exp-settings-row-wide .exp-settings-note{flex:1 1 100%;margin-top:2px}' +
+      // ── 设置页可读性覆盖（2026-11-26）：分组/行/状态徽标，字号与留白按“扫一眼就懂”调 ──
+      '.exp-settings{font-size:13px;max-width:820px}' +
+      '.exp-settings-group{margin:20px 0 4px;font-size:14px;font-weight:650;letter-spacing:0;color:#1f2d3a;padding-bottom:6px;border-bottom:1px solid #eef2f7}' +
+      '.exp-settings-row{gap:14px;padding:10px 0;border-top:1px solid #f1f5f9}' +
+      '.exp-settings-main{flex:1;min-width:0}' +
+      '.exp-settings-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap}' +
+      '.exp-settings-label{flex:none;max-width:none;font-size:13px;font-weight:600;color:#22303c;line-height:1.5}' +
+      '.exp-settings-state{font-size:10.5px;padding:1px 7px;border-radius:999px;background:#eef2f7;color:#5b6b7c;white-space:nowrap}' +
+      '.exp-settings-state.on{background:#e8f6ee;color:#2f6b47}' +
+      '.exp-settings-state.off{background:#fdf3e6;color:#8a6100}' +
+      '.exp-settings-state.preset{background:#eef2f7;color:#5b6b7c}' +
+      '.exp-settings-note{display:block;margin-top:4px;font-size:11.5px;line-height:1.55;color:#7a8a99}' +
+      '.exp-settings-ctl{flex:0 0 auto;min-width:104px;justify-content:flex-end}' +
+      '.exp-settings-ctl select{font-size:12.5px;padding:3px 6px;border-radius:6px}' +
+      '.exp-settings-adv>summary{font-size:12.5px;padding:6px 0}' +
       '.exp-settings-msg{margin-top:10px;padding:6px 0;font-size:11.5px;font-weight:700;color:#1a7f5a}' +
       '.exp-settings-msg.bad{color:#b3291e;font-weight:600}' +
       '.exp-settings-retry{margin-top:10px;padding:4px 12px;border:1px solid var(--dsw-alias-border-l2,var(--border,#d0d7de));border-radius:8px;background:var(--dsw-alias-bg-layer-3,var(--bg,#fff));color:inherit;cursor:pointer;font-size:12px}' +
@@ -2071,7 +2086,7 @@ window.__ModuleLoader__.load({
           var cur = vals[g.group] ? vals[g.group][it.key] : undefined
           var value = typeof cur === 'undefined' ? it.default : cur
           return {
-            path: it.path, key: it.key, type: it.type, label: it.label, hint: it.hint || '', tier: it.tier || 'basic', hidden: it.hidden === true,
+            path: it.path, key: it.key, type: it.type, label: it.label, hint: it.hint || '', tier: it.tier || 'basic', hidden: it.hidden === true, nullable: it.nullable === true,
             values: it.values || null, labels: it.labels || null, min: typeof it.min === 'number' ? it.min : null, max: typeof it.max === 'number' ? it.max : null,
             value: it.type === 'roles' ? (Array.isArray(value) ? value.join(', ') : '') : value,
             known: ['bool', 'int', 'enum', 'roles'].indexOf(it.type) >= 0,
@@ -2235,6 +2250,10 @@ window.__ModuleLoader__.load({
           var ctl
           if (!r.known) {
             ctl = h('span', { style: { color: '#c0392b' } }, '未知类型 ' + esc(String(r.type)) + '（界面未跟上 spec）')
+          } else if (r.type === 'bool' && r.nullable) {
+            // 可空开关 = 三态：按预设 / 开启 / 关闭。复选框把「按预设」画成未勾选，用户会读成"关"。
+            ctl = h('select', { value: r.value === null ? '' : String(r.value), onChange: function (e) { var v = e.target.value; save({ [r.path]: v === '' ? null : (v === 'true') }) } },
+              h('option', { value: '' }, esc(t('按预设', 'Preset'))), h('option', { value: 'true' }, esc(t('开启', 'On'))), h('option', { value: 'false' }, esc(t('关闭', 'Off'))))
           } else if (r.type === 'bool') {
             ctl = h('input', { type: 'checkbox', checked: !!r.value, onChange: function (e) { save({ [r.path]: e.target.checked }) } })
           } else if (r.type === 'int') {
@@ -2247,6 +2266,12 @@ window.__ModuleLoader__.load({
             ctl = h('input', { type: 'text', value: String(r.value), placeholder: t('留空 = 按档位默认', 'empty = tier default'), style: { width: 168 },
               onBlur: function (e) { var v = e.target.value.trim(); save({ [r.path]: v === '' ? null : v.split(',').map(function (x) { return x.trim() }).filter(Boolean) }) } })
           }
+          // 状态徽标：让「开着还是关着」不用去读复选框/下拉的当前值。
+          var stateText = '', stateCls = ''
+          if (r.type === 'bool') {
+            if (r.nullable) { stateText = r.value === null ? t('按预设', 'preset') : (r.value ? t('开启', 'on') : t('关闭', 'off')); stateCls = r.value === null ? ' preset' : (r.value ? ' on' : ' off') }
+            else { stateText = r.value ? t('已开启', 'on') : t('已关闭', 'off'); stateCls = r.value ? ' on' : ' off' }
+          }
           // 说明过长（>120 字）就让这一行换行、说明独占一行 —— 否则它会被控件列挤成一条
           // 又窄又高的文字柱（真机截图里「记忆后端」那行就是这样）。阈值取 120：spec 里现存的
           // hint 只有两条超过它，其余行（≤83 字）照旧排在控件右边，版面不受影响。
@@ -2257,9 +2282,12 @@ window.__ModuleLoader__.load({
             // `lib/settings.js` 的 hint **本来就该是纯文本**（现存 19 条里 18 条是，唯一带标记的就是这条），
             // 所以这里的 strip 是**防御性收口** —— 不靠"作者记得别写 markdown"这条纪律兜底。
             // 顺序固定为 `esc(plainText(...))`：先剥标记、再转义 HTML（与其它 10 处调用点同一套）。
-            h('span', { className: 'exp-settings-label', title: plainText(r.hint) }, esc(r.label)),
-            h('span', { className: 'exp-settings-ctl' }, ctl),
-            h('span', { className: 'exp-settings-note', title: plainText(r.hint) }, r.hint ? esc(plainText(r.hint)) : null)))
+            h('div', { className: 'exp-settings-main' },
+              h('div', { className: 'exp-settings-line' },
+                h('span', { className: 'exp-settings-label', title: plainText(r.hint) }, esc(r.label)),
+                stateText ? h('span', { className: 'exp-settings-state' + stateCls }, esc(stateText)) : null),
+              r.hint ? h('span', { className: 'exp-settings-note', title: plainText(r.hint) }, esc(plainText(r.hint))) : null),
+            h('span', { className: 'exp-settings-ctl' }, ctl)))
         })
         basicRows.forEach(function (el) { rows.push(el) })
         if (advRows.length) rows.push(h('details', { key: 'adv-' + g.group, className: 'exp-settings-adv' },

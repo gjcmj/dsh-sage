@@ -54,6 +54,9 @@ console.log('① 表单由 host 的 schema 生成（不另写一份默认值/值
   check(allRows.filter((r) => r.tier === 'advanced').length >= 20, '高级项存在且默认折叠', String(allRows.filter((r) => r.tier === 'advanced').length));
   const tpl = allRows.find((r) => r.path === 'workflow.template');
   check(tpl && tpl.hidden === true, '只有一个取值的「模板」被隐藏', JSON.stringify(tpl && { tier: tpl.tier, hidden: tpl.hidden }));
+  check(allRows.find((r) => r.path === 'workflow.discovery').nullable === true, '可空开关透传到表单（三态控件）');
+  check(src.includes("r.type === 'bool' && r.nullable") && src.includes('按预设'), '可空开关渲染为三态（按预设 / 开启 / 关闭）');
+  check(src.includes('exp-settings-state'), '每行有状态徽标（开着/关着一眼可见）');
   const all = model.flatMap((g) => g.rows);
   check(all.length === Object.keys(settingsSchema().flatMap((g) => g.items)).length, '行数 = spec 项数（不重不漏）', String(all.length));
   // `memory.backend` 是**schema 驱动**的直接证据：它没在客户端手写过任何控件，靠 spec 就出现了，
