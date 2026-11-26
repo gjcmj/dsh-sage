@@ -92,7 +92,8 @@ check(s4.next === null, "没有下一步（全绿）");
 console.log("\n⑥ 设置：关闭发现 / 启用原型");
 await mkdir(join(root, ".sage"), { recursive: true });
 await writeFile(join(root, ".sage/state.json"), JSON.stringify({ workflow: { phases: { discovery: false, prototype: true }, preset: "base" } }), "utf8");
-const s5 = deriveWorkflowState(join(root));
+// 用一个空的 skills 目录，模拟「启用了某可选阶段、但对应 skill 没装」。
+const s5 = deriveWorkflowState(join(root), { skillsDir: join(root, "no-skills") });
 check(s5.phases.find((p) => p.id === "discovery").skipped === true, "关闭发现 ⇒ skip");
 check(s5.phases.find((p) => p.id === "prototype").skipped === false, "启用原型 ⇒ 出现在阶段里");
 check(s5.phases.find((p) => p.id === "prototype").done === false, "原型无产物 ⇒ 未完成");
