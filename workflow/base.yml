@@ -1,0 +1,41 @@
+# 通用项目模板（默认）：kickoff → discovery(可裁剪) → PRD(草案/定稿) → [可选原型/技术方案] → team
+# 修改后请跑 workflow-presets 测试；项目启动时会钉住 version。
+id: base
+version: 1
+name: 通用项目模板
+
+artifacts:
+  kickoffDraft: tasks/00-kickoff-draft.md
+  kickoff: tasks/00-kickoff.md
+  agents: AGENTS.md
+  research: research/
+  prd: docs/PRD.md
+  prototype: docs/prototype/
+  techPlan: docs/tech-plan/
+  decisions: decisions.md
+  state: .sage/state.json
+
+phases:
+  kickoff:
+    skill: kickoff
+    required: true
+  discovery:
+    skill: discovery
+    required: false
+    enabledByDefault: true
+    routes: [internal, users]
+  prd:
+    skill: prd
+    required: true
+  prototype:
+    skill: prototype
+    required: false
+    enabledByDefault: false
+    requiresPRDFinal: true
+  tech-plan:
+    skill: tech-plan
+    required: false
+    enabledByDefault: false
+    requiresPRDFinal: true
+  dev:
+    handoff: team
