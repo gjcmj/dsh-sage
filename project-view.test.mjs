@@ -26,7 +26,8 @@ const STATE = {
     { id: "prototype", label: "原型（可选）", done: false, missing: [], skipped: true, reason: "未启用" },
     { id: "dev", label: "开发（team）", done: false, missing: ["等 PRD 定稿"], skipped: false },
   ],
-  prd: { status: "draft", version: "0.1", draftOk: true, finalOk: false, openQuestions: 2, dimensions: { filled: 15, total: 18, missing: ["failure"] }, highlights: { count: 3, complete: 1 }, scope: { must: 2, nonGoals: 1 }, metrics: { has: true, hasCaliber: true, hasAntiGame: false } },
+  prd: { status: "draft", version: "0.1", draftOk: true, finalOk: false, openQuestions: 2, dimensions: { filled: 15, total: 18, missing: ["failure"] }, highlights: { count: 3, complete: 1 }, scope: { must: 2, nonGoals: 1 }, metrics: { has: true, hasCaliber: true, hasAntiGame: false }, conflicts: false, traceRate: 0 },
+  artifacts: [ { key: "kickoff", label: "章程", path: "tasks/00-kickoff.md", exists: true }, { key: "prd", label: "PRD", path: "docs/PRD.md", exists: true }, { key: "prototype", label: "原型", path: "docs/prototype/", exists: false } ],
   agents: { devMode: false, version: "0.3", ok: true },
   template: { id: "base", version: 1, preset: "base" },
   counts: { researchFiles: 2, teamRuns: 0 },
@@ -46,6 +47,8 @@ check(p.steps[2].ok === false, "PRD 未完成");
 check(p.dock.includes("立项（章程）✓") && p.dock.includes("原型（可选）(skip)"), "dock 含完成与 skip", p.dock);
 check(p.next.includes("PRD") && p.next.includes("缺："), "下一步是人话 + 缺项", p.next);
 check(p.agents.devMode === false, "AGENTS 版本透出");
+check(p.ready.conflicts === 0 && p.ready.traceRate === 0, "就绪度含冲突/回指", JSON.stringify(p.ready));
+check(p.artifacts.length === 3 && p.artifacts[2].exists === false, "产物清单透出（缺项可渲染）", JSON.stringify(p.artifacts.map((a) => a.exists)));
 
 console.log("\n② 空/非项目");
 const empty = projectPayload(null);
@@ -63,6 +66,10 @@ check(clientSrc.includes("viewMode ? h(ProjectStrip"), "conversation.view 顶部
 check(clientSrc.includes("function ProjectStrip") && clientSrc.includes("exp-projstrip"), "ProjectStrip 组件与样式在场");
 check(clientSrc.includes("/plugins/dsh-expert-team/project"), "dock 与 strip 共用同一条工作流路由");
 check(clientSrc.includes("className: 'exp-projbar'"), "dock 一行存在");
+check(clientSrc.includes("exp-pjbadge"), "项目条有 PRD 草案/定稿徽标");
+check(clientSrc.includes("exp-projstrip-ready") && clientSrc.includes("ready.prdCoverage"), "就绪度行渲染（维度/开放/亮点/冲突）");
+check(clientSrc.includes("exp-pjart"), "产物区渲染（缺项标拒绝色）");
+check(!clientSrc.includes("settings.section', 'expert-team-workflow"), "不新增第二个设置入口");
 
 if (fail) { console.error("\n✗ 失败 " + fail + " 项"); process.exit(1); }
 console.log("\n✓ 全部通过");
