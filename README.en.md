@@ -186,6 +186,16 @@ A persistent status bar also sits directly above the chat input box (client slot
   cross-run experience and feeds it back **before the next run starts**; with Hindsight it also recalls across
   projects ([recommended, not required](#dependencies-and-recommended-plugins)).
 
+## New-project workflow (kickoff → discovery → PRD)
+
+Before the delivery pipeline, the plugin now ships a configurable front workflow (shown in the cockpit together with run phases):
+
+- **kickoff**: source baseline → charter draft (four markers) → item-by-item confirmation → final charter + solution-stage `AGENTS.md`;
+- **discovery** (trimmable): pick only the routes a project needs (internal / users / competitors / policy / tech-form / market); no fixed four routes, no competitor quota;
+- **PRD**: one file, two states — draft (alignment) → human-signed final (single baseline); optional prototype / tech-plan only after the final;
+- Templates and presets under `workflow/` (`software`, `internal-platform`, `tool`); settings live in the existing Expert-team settings page;
+- Preconditions warn by default; turning on strict mode blocks run creation and `src/` writes until the PRD is final.
+
 ## Measured numbers (with sources and conditions)
 
 | Metric | Measured | Conditions |
