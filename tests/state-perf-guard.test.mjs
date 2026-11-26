@@ -333,20 +333,20 @@ console.log('\n⑥ 推荐插件自检（缺了说一句、装了不吭声、区�
   const st = (r, id) => (r.items.find((i) => i.id === id) || {}).status;
 
   const nothing = detectOptionalPlugins(ctxOf([]));
-  check(st(nothing, 'hindsight') === 'missing' && st(nothing, 'cost-meter') === 'missing', 'loader 说都没有 ⇒ missing', JSON.stringify(nothing.items.map((i) => i.id + '=' + i.status)));
+  check(st(nothing, 'mnemon') === 'missing' && st(nothing, 'cost-meter') === 'missing', 'loader 说都没有 ⇒ missing', JSON.stringify(nothing.items.map((i) => i.id + '=' + i.status)));
   check(nothing.needsAttention.length === 2 && /dsh plugin --profile web add/.test(nothing.hint) && nothing.hint.split('\n').length === 1,
     '缺了给**一行**提示且带安装命令（不吓人：明说"不影响使用"）', nothing.hint.slice(0, 60) + '…');
 
-  const installedNotConfigured = detectOptionalPlugins(ctxOf(['@vectorize-io/hindsight-coding-agents/dsh'], { tools: [] }));
-  check(st(installedNotConfigured, 'hindsight') === 'installed-not-ready',
+  const installedNotConfigured = detectOptionalPlugins(ctxOf(['dsh-mnemon'], { tools: [] }));
+  check(st(installedNotConfigured, 'mnemon') === 'installed-not-ready',
     '包装了但工具没注册 ⇒ installed-not-ready（**装了没配**，与"没装"分开）', JSON.stringify(installedNotConfigured.items.map((i) => i.id + '=' + i.status)));
 
-  const ready = detectOptionalPlugins(ctxOf(['dsh-cost-meter', '@vectorize-io/hindsight-coding-agents'], { costMeter: true, tools: ['hindsight_ingest_document'] }));
-  check(st(ready, 'hindsight') === 'ready' && st(ready, 'cost-meter') === 'ready' && ready.hint === '',
+  const ready = detectOptionalPlugins(ctxOf(['dsh-cost-meter', 'dsh-mnemon'], { costMeter: true, tools: ['mnemon_recall'] }));
+  check(st(ready, 'mnemon') === 'ready' && st(ready, 'cost-meter') === 'ready' && ready.hint === '',
     '都齐 ⇒ 全部 ready 且 **hint 为空**（装了完全不打扰）', JSON.stringify(ready.items.map((i) => i.id + '=' + i.status)));
 
   const blind = detectOptionalPlugins({ get: () => undefined });
-  check(st(blind, 'hindsight') === 'unknown' && st(blind, 'cost-meter') === 'unknown' && blind.hint === '',
+  check(st(blind, 'mnemon') === 'unknown' && st(blind, 'cost-meter') === 'unknown' && blind.hint === '',
     'loader 探测不可用 + 服务也拿不到 ⇒ unknown（**不假装知道**，也不进提示）', JSON.stringify(blind.items.map((i) => i.id + '=' + i.status)));
 
   // 一行纪律：同一次加载最多一条，且装了的时候一条都不打
@@ -357,17 +357,17 @@ console.log('\n⑥ 推荐插件自检（缺了说一句、装了不吭声、区�
   try {
     hintOptionalPluginsOnce(ctxOf([]));
     hintOptionalPluginsOnce(ctxOf([]));
-    hintOptionalPluginsOnce(ctxOf(['dsh-cost-meter', '@vectorize-io/hindsight-coding-agents'], { costMeter: true, tools: ['hindsight_ingest_document'] }));
+    hintOptionalPluginsOnce(ctxOf(['dsh-cost-meter', 'dsh-mnemon'], { costMeter: true, tools: ['mnemon_recall'] }));
   } finally { console.log = orig }
   check(logs.length === 1, '同一次加载**最多一行**（重复调用不再刷屏）', 'logs=' + logs.length);
 
   // 分档文案（2026-09-15 真实假警报）：装了但此刻拿不到 **不许**再给安装命令
-  const onlyNotReady = detectOptionalPlugins(ctxOf(['dsh-cost-meter', '@vectorize-io/hindsight-coding-agents'], { costMeter: true, tools: [] }));
-  check(st(onlyNotReady, 'cost-meter') === 'ready' && st(onlyNotReady, 'hindsight') === 'installed-not-ready',
-    '构造"只有 installed-not-ready"的场景（费用已就绪、Hindsight 装了没配）', JSON.stringify(onlyNotReady.items.map((i) => i.id + '=' + i.status)));
+  const onlyNotReady = detectOptionalPlugins(ctxOf(['dsh-cost-meter', 'dsh-mnemon'], { costMeter: true, tools: [] }));
+  check(st(onlyNotReady, 'cost-meter') === 'ready' && st(onlyNotReady, 'mnemon') === 'installed-not-ready',
+    '构造"只有 installed-not-ready"的场景（费用已就绪、Mnemon 装了没配）', JSON.stringify(onlyNotReady.items.map((i) => i.id + '=' + i.status)));
   check(onlyNotReady.hint !== '' && !/dsh plugin/.test(onlyNotReady.hint) && /已安装但当前未就绪/.test(onlyNotReady.hint),
     'installed-not-ready 的提示**不含安装命令**（那等于叫用户装一个已经装好的东西）', onlyNotReady.hint.slice(0, 78) + '…');
-  const hseg = (installedNotConfigured.hint.split('；').find((p) => p.indexOf('hindsight') >= 0) || '');
+  const hseg = (installedNotConfigured.hint.split('；').find((p) => p.indexOf('mnemon') >= 0) || '');
   check(hseg !== '' && !/dsh plugin/.test(hseg), '混合提示里**逐项**分档：该给命令的给、不该给的不给', hseg.slice(0, 56) + '…');
   check(/dsh plugin --profile web add/.test(nothing.hint), 'missing 的提示**含**安装命令（该装就告诉他怎么装）', '');
   check(installedNotConfigured.hint.split('\n').length === 1, '分档之后仍然只有一行', '');
@@ -376,7 +376,7 @@ console.log('\n⑥ 推荐插件自检（缺了说一句、装了不吭声、区�
   {
     const { scheduleOptionalPluginCheck } = _live;
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-    const lateLoader = { entries: function* () { yield { options: { name: 'dsh-cost-meter' } }; yield { options: { name: '@vectorize-io/hindsight-coding-agents' } } } };
+    const lateLoader = { entries: function* () { yield { options: { name: 'dsh-cost-meter' } }; yield { options: { name: 'dsh-mnemon' } } } };
 
     // (i) 服务晚一步挂上 ⇒ 重探发现都齐 ⇒ 一声不吭（这正是用户那次假警报的场景）
     let phase = 0;
@@ -384,7 +384,7 @@ console.log('\n⑥ 推荐插件自检（缺了说一句、装了不吭声、区�
       get: (n) => {
         if (n === 'loader') return lateLoader;
         if (n === 'costMeter') return phase >= 1 ? {} : undefined;
-        if (n === 'tools') return { get: (t) => (phase >= 1 && t === 'hindsight_ingest_document' ? { name: t } : undefined) };
+        if (n === 'tools') return { get: (t) => (phase >= 1 && t === 'mnemon_recall' ? { name: t } : undefined) };
         return undefined;
       },
     };

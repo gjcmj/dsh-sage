@@ -3,7 +3,7 @@
 > **A general-purpose front workflow for new projects: kickoff to PRD, then hand off to the delivery pipeline.**
 > Built on the [expert-team](https://github.com/yangdcm/dsh-expert-team) engine (12 roles / 9 gated phases), Sage adds kickoff → discovery → PRD → optional prototype / tech plan, and keeps the workflow, templates, settings and cockpit in one plugin.
 
-| 12 roles | 9 phases | 99 test files | 0 runtime deps | 0 build steps |
+| 12 roles | 9 phases | 97 test files | 0 runtime deps | 0 build steps |
 |---|---|---|---|---|
 
 ## Why Sage
@@ -78,7 +78,7 @@ Run artifacts live in `<workspace>/team/<run-id>/`; front-stage artifacts live i
 
 ## Quality
 
-- **99 test files** (`npm run test:all`, zero dependencies, no install needed) plus a **176-entry mutation catalog**;
+- **97 test files** (`npm run test:all`, zero dependencies, no install needed) plus a **164-entry mutation catalog**;
 - Gates check structure; quality is signed off by a human. Coverage is never rendered as "quality passed".
 
 ## Upstream

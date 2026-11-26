@@ -2137,33 +2137,13 @@ window.__ModuleLoader__.load({
      * 话。所以句子仍由**这一个函数**产出，`memoryBackendMsg` 对外输出与拆分前**逐字相同**（两个调用
      * 点不用改），三选一那处只是把同一份分段拿去自己排版。
      */
-    function memoryBackendParts(d) {
-      var r = d && typeof d === 'object' ? d : {}
-      var needRestart = !!r.needsRestart
-      var saved = r.saved ? t('已保存', 'Saved') : t('没有改动、未写盘', 'No change — nothing written')
-      var notWired = r.notWired ? t('Midas 未接通：这次只记住了选择，实际记忆仍走 Hindsight（profile 补丁里没有那一行，原因见下方引导）。', 'Midas is NOT connected: only the choice was stored; memory still goes through Hindsight (the patch has no such row — see the guide below).') : ''
-      var restartHead = ''
-      var restartWhy = ''
-      if (needRestart) {
-        restartHead = t('需重启 dsh web 才生效', 'restart dsh web to take effect')
-        restartWhy = r.restartReason ? plainText(r.restartReason) : ''
-      }
-      // `receipt` = 告警框**没有**说的那半句（改动到底落盘没有 / 选的后端接通没有）；
-      // `restart` = 完整那一句（含原因，与拆分前的整句逐字相同）。
-      // 两段都由上面这几个字面量拼出 —— 没有任何一处再另写一句同义的话。
-      var receipt = notWired ? saved + ' · ' + notWired : saved
-      return {
-        saved: saved,
-        notWired: notWired,
-        restartHead: restartHead,
-        restartWhy: restartWhy,
-        receipt: receipt,
-        restart: restartHead ? restartHead + (restartWhy ? t('（', ' (') + restartWhy + t('）', ')') : '') : '',
-      }
-    }
-    function memoryBackendMsg(d) {
-      var p = memoryBackendParts(d)
-      return p.restart ? p.receipt + ' · ' + p.restart : p.receipt
+    /** 记忆来源的一句话（只读；不提供开关）。 */
+    function memorySourceText(mem) {
+      var p = mem && mem.providers ? mem.providers[0] : null
+      if (!p) return t('记忆来源：未知（宿主未提供记忆插件信息）', 'Memory: unknown (the host did not report a memory plugin)')
+      if (p.status === 'ready') return t('记忆来源：' + p.pkg + '（宿主本地记忆，已就绪；本插件不配置记忆后端、不消耗 token）', 'Memory: ' + p.pkg + ' (host-local, ready; this plugin configures no backend and spends no tokens)')
+      if (p.status === 'missing') return t('记忆来源：未检测到本地记忆插件 —— 可选安装 ' + p.pkg + '（' + (p.install || '') + '）', 'Memory: no local memory plugin detected — optionally install ' + p.pkg + ' (' + (p.install || '') + ')')
+      return t('记忆来源：' + p.pkg + '（状态未知：装了但此刻不可用，或探测不可用）', 'Memory: ' + p.pkg + ' (status unknown: installed but unavailable now, or probe unavailable)')
     }
 
     function SettingsSection() {
@@ -2173,6 +2153,7 @@ window.__ModuleLoader__.load({
       var lS = useState(''); var loadErr = lS[0], setLoadErr = lS[1]
       var rS = useState(0); var retry = rS[0], setRetry = rS[1]
       var loadingS = useState(true); var loading = loadingS[0], setLoading = loadingS[1]
+      var memS = useState(null); var mem = memS[0], setMem = memS[1]
       useEffect(function () {
         var alive = true
         setLoading(true); setLoadErr('')
@@ -2189,14 +2170,17 @@ window.__ModuleLoader__.load({
         })
         return function () { alive = false }
       }, [retry])
+      // 记忆来源：只读检测（不提供开关、不写 profile）。读不到 ⇒ 显示“未知”，不假装知道。
+      useEffect(function () {
+        var alive = true
+        fetch('/plugins/dsh-expert-team/memory-status')
+          .then(function (r) { return r.json().catch(function () { return null }) })
+          .then(function (d) { if (alive) setMem(d && d.ok ? d : null) })
+          .catch(function () { if (alive) setMem(null) })
+        return function () { alive = false }
+      }, [])
       function save(patch) {
-        // ⚠️ `memory.backend` **不走** `/settings`（2026-09-17 更正）：选 `off` 时还要把 dsh profile 的
-        // 补丁文件改成一致（给 `hindsight` 行加/去 `disabled: true`），而那份补丁是 profile **加载时**
-        // 才读的 ⇒ 改它**需要重启 `dsh web`**。所以这一个键走专用路由
-        // `/plugins/dsh-expert-team/memory-backend`，并由那条路由的回执如实给出重启要求。
-        // （此前这里挂着「没有任何设置需要重启 ⇒ 死分支已删」—— 对这一个键它已不成立，那句话不能再留。）
-        var mb = patch && typeof patch === 'object' ? patch['memory.backend'] : undefined
-        if (typeof mb === 'string') { saveMemoryBackend(mb); return }
+        // 所有设置都走 /settings：插件不再改 dsh profile（旧的记忆后端专用路由已删除）。
         setErr(''); setMsg('保存中…')
         fetch('/plugins/dsh-expert-team/settings', {
           method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(patch),
@@ -2209,21 +2193,6 @@ window.__ModuleLoader__.load({
           setData(function (prev) { return { schema: (prev && prev.schema) || [], settings: res.d.settings, ok: true } })
           applyDisplaySettings(res.d.settings)   // 1.3.4：设置页改完 display 四项**当场生效**（不必重启/刷新）
           setMsg('已保存')   // 除「记忆 → 记忆后端」外，没有任何设置需要重启（那一项走专用路由，见 saveMemoryBackend）
-        }).catch(function (e) { setErr(String(e && e.message ? e.message : e)); setMsg('') })
-      }
-      /** 记忆后端：走 `/memory-backend`（同一次调用里**落地 profile 补丁** + **存值**，并如实回 `needsRestart`）。 */
-      function saveMemoryBackend(v) {
-        setErr(''); setMsg('保存中…')
-        fetch('/plugins/dsh-expert-team/memory-backend', {
-          method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ backend: v }),
-        }).then(function (r) { return r.json().catch(function () { return null }).then(function (d) { return { ok: r.ok, d: d } }) }).then(function (res) {
-          if (!res.ok || !res.d || !res.d.ok) {
-            setErr(((res.d && (res.d.errors || [res.d.error])) || ['保存失败']).join('；'))
-            setMsg('')
-            return
-          }
-          setData(function (prev) { return { schema: (prev && prev.schema) || [], settings: res.d.settings || (prev && prev.settings) || {}, ok: true } })
-          setMsg(memoryBackendMsg(res.d))
         }).catch(function (e) { setErr(String(e && e.message ? e.message : e)); setMsg('') })
       }
       if (loading) return h('div', { className: 'exp-settings' }, h('div', { className: 'exp-empty' }, t('（正在读取设置…）', '(loading settings…)')))
@@ -2306,35 +2275,16 @@ window.__ModuleLoader__.load({
         //      不是承诺，而是如实告知；逐项标记由 per-item hint 携带，不在这里重复。
         // 「暂未生效」那句**只在真有这种项时**才渲染（1.3.5）：INERT_SETTINGS 现在是空的，
         // 无条件渲染会让用户去找一个不存在的标注。判据直接取 hint 里的标记 ⇒ 与后端单一真源一致。
-        h('div', { className: 'exp-settings-head' }, esc(hasInertMark
-          ? t('改动即保存并即时生效（上限 / 轮次 / 档位门 / 振荡检测开关在进程内重算）。唯一例外是「记忆 → 记忆后端」：它要改 dsh profile 的补丁文件，需重启 dsh web 才生效（那一行会自己告诉你）。标着「暂未生效」的项尚未接线，改了不会有作用。',
-            'Saved on change and applied immediately (caps, rounds, the tier gate and the oscillation switch are recomputed in-process). The one exception is "Memory → backend": it edits dsh\u2019s profile patch, so it needs a dsh web restart (that row says so itself). Items marked as not yet in effect are not wired up — changing them does nothing.')
-          : t('改动即保存并即时生效（上限 / 轮次 / 档位门 / 振荡检测开关在进程内重算）。唯一例外是「记忆 → 记忆后端」：它要改 dsh profile 的补丁文件，需重启 dsh web 才生效（那一行会自己告诉你）。',
-            'Saved on change and applied immediately (caps, rounds, the tier gate and the oscillation switch are recomputed in-process). The one exception is "Memory → backend": it edits dsh\u2019s profile patch, so it needs a dsh web restart (that row says so itself).'))),
+        h('div', { className: 'exp-settings-head' }, esc(hasInertMark ? t('改动即保存并即时生效；标着「暂未生效」的项尚未接线，改了不会有作用。', 'Saved on change and applied immediately. Items marked as not yet in effect are not wired up.') : t('改动即保存并即时生效。', 'Saved on change and applied immediately.'))),
         rows,
+        h('div', { className: 'exp-settings-note exp-settings-memsrc' }, esc(memorySourceText(mem))),
         h(SubagentOrderBlock),
         h(PresetLayBlock),
-        h(HindsightBlock, {
-          onSettings: function (s) { setData(function (prev) { return { schema: (prev && prev.schema) || [], settings: s, ok: true } }) },
-          // 块里的「记忆后端」三选一与上面表单里那一行是**同一个键**：把当前值当刷新信号传下去，
-          // 任一处改完，另一处都会重新拉服务端状态（否则界面会自相矛盾）。
-          memoryBackend: String((((data.settings || {}).memory) || {}).backend || ''),
-        }),
         h('div', { className: 'exp-settings-msg' + (err ? ' bad' : '') }, esc(err ? '✗ ' + err : (msg || ''))))
     }
 
     /**
-     * 记忆后端（Hindsight）块：**诊断 + 配置**（1.3.18 一期只读诊断；1.3.21 二期加写路径）。
-     *
-     * 诊断部分（配置路径 · 形态 · 地址 · **token 是否已配置**（值绝不回显）· 最近失败已分类 + 可操作
-     * hint · 可选一次连通性探测）保持不变；写部分只做三件事：改形态 / 改地址 / **设置或显式清除** token。
-     *
-     * 五条纪律（有测试盯着）：
-     *   ① **token 值不回显** —— 输入框是 password、保存后立刻清空，界面只显示"已配置/未配置"；
-     *   ② 空输入 = **保持原值不变**（要清除必须按「清除」按钮 —— 空串不等于删除）；
-     *   ③ 保存后按**实际改了哪个键**提示是否要重启（改 `serverMode`/`apiUrl` 要重启，只改 token 不用）；
-     *   ④ 没有改动 ⇒ 如实说"没有改动、未写盘"，**不假报已保存**；
-     *   ⑤ 失败原样显示服务端给的 `errors`（不吞、不美化）。
+     * 子代理列表顺序的生效状态（只读）。
      */
     /**
      * 子代理列表顺序的**生效状态**（只读）。
@@ -2467,514 +2417,6 @@ window.__ModuleLoader__.load({
      * 另一处必须重新拉一次服务端状态 —— 否则会出现"上面那一行已经是 off，这一块还写着 Hindsight"的
      * 界面不一致（本仓名为最难排查的状态）。父组件把当前设置里的值当 `refresh` 传下来，它就是判据。
      */
-    function MemoryBackendBlock(props) {
-      var onSettings = (props && props.onSettings) || null
-      var refresh = props && props.refresh
-      var sS = useState(null); var st = sS[0], setSt = sS[1]
-      var eS = useState(''); var err = eS[0], setErr = eS[1]
-      var mS = useState(''); var msg = mS[0], setMsg = mS[1]
-      // 结构化回执：只用来把"需重启"提到顶部那块显眼的告警框里（分段文案仍出自 `memoryBackendParts`）。
-      var rcS = useState(null); var receipt = rcS[0], setReceipt = rcS[1]
-      var bS = useState(false); var busy = bS[0], setBusy = bS[1]
-      // ── 「移除 mcp-midas 那一行」的**两次点击**武装位（与 `HindsightBlock.armClear` 同一套先例）──
-      // 第一次点只是武装（按钮文案变成"再点一次确认"），第二次才真的 POST。理由：这是一个**删用户
-      // 补丁文件内容**的动作，误触的代价与「清除令牌」同级 ⇒ 沿用本仓既有的确认习惯，不另发明一种。
-      // 刻意**不**复用 `receipt`：那条回执链（`memoryBackendParts`）描述的是"改了后端选择 ⇒ 要不要重启"，
-      // 与"删掉一行"不是同一件事 —— 混进去会让顶部的重启告警框在最坏的时候说着上一轮的话
-      // （⑦c 的「setReceipt 恰好两处」计数守卫也正是不许这里多出一处）。
-      var rS = useState(false); var armRemove = rS[0], setArmRemove = rS[1]
-      function load(withProbe) {
-        // `?probe=1` 只有用户点「探测一次启动」时才带：那会在服务端**真的启动一次** Midas 进程做 MCP 握手，
-        // 与 Hindsight 那条连通性探测同一口径（进页面不发任何探测请求）。
-        return fetch('/plugins/dsh-expert-team/memory-backend' + (withProbe ? '?probe=1' : ''))
-          .then(function (r) { return r.json().catch(function () { return null }) })
-          .then(function (dd) { setSt(dd && dd.ok ? dd : null) })
-          .catch(function () { setSt(null) })
-      }
-      useEffect(function () { load() }, [refresh])
-      if (!st) return null   // 读不到状态就不占位、也不假报（与 SubagentOrderBlock 同口径）
-      var values = (st.backends && st.backends.length) ? st.backends : ['hindsight', 'midas', 'off']
-      var labels = st.labels || {}
-      var cur = String(st.stored || 'hindsight')
-      /** 复制一段命令：与「复制路径」同一套（`try/catch` 兜住没有 clipboard 的环境，复制失败不影响任何事）。 */
-      function copyText(s) {
-        try { navigator.clipboard.writeText(String(s == null ? '' : s)) } catch (e) { /* 复制失败不阻断 */ }
-      }
-      function apply(v) {
-        setBusy(true); setErr(''); setMsg(''); setReceipt(null)   // 开新一轮就撤掉旧告警：绝不让人看着上一次的重启要求做这一次的决定
-        fetch('/plugins/dsh-expert-team/memory-backend', {
-          method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ backend: v }),
-        }).then(function (r) { return r.json().catch(function () { return null }).then(function (dd) { return { ok: r.ok, d: dd } }) }).then(function (res) {
-          setBusy(false)
-          if (!res.ok || !res.d || !res.d.ok) { setErr(((res.d && (res.d.errors || [res.d.error])) || ['保存失败']).join('；')); return }
-          // 让上面那张设置表单同步到新值（"界面显示 A、服务端是 B"是最难排查的状态）。
-          // 有 `onSettings` 时父组件会回传新设置 ⇒ `refresh` 变化 ⇒ 上面的 effect 自己重新拉一次；
-          // 没有的话（本块被单独渲染）就这里自己拉，两种路径都不会停在旧状态。
-          if (res.d.settings && onSettings) onSettings(res.d.settings)
-          else load()
-          setMsg(memoryBackendMsg(res.d))          // 整句回执（含重启那句）—— 与拆分前的输出逐字相同
-          setReceipt(memoryBackendParts(res.d))    // 同一份字面量的分段版：顶部告警框排版用
-        }).catch(function (e) { setBusy(false); setErr(String(e && e.message ? e.message : e)) })
-      }
-      /**
-       * 移除补丁里那个 `- insert:` 包裹的 `mcp-midas` 行 —— 「选 off 也关不干净」的**一键处置**。
-       *
-       * 为什么要这个按钮：选 `off` 只写 `hindsight: disabled: true`，**不碰** `mcp-midas` 那一行 ⇒
-       * Midas 的 MCP 服务照样随 dsh web 启动、它的工具照样注册，而界面原来只说"不会有任何记忆调用"。
-       * 服务端已经把"那一行还在不在 / 能不能安全删"当成**独立事实**（`midasRowPresent` /
-       * `midasRowRemovable`，与 `stored` 无关）发下来 ⇒ 客户端只在它说"能删"时才给这个按钮。
-       *
-       * 三条纪律：
-       *   ① **不碰 `setReceipt`**：那条回执链是给"改后端选择"的（顶部重启告警框取它的分段文案）。
-       *      删一行是另一件事，它的回执只走下面的 `setMsg` / `setErr` —— 否则重启告警框会拿着
-       *      上一轮的形状说这一轮的话（⑦c 的「setReceipt 恰好两处」计数守卫也钉着不许这里多出一处）。
-       *   ② **成功后回读一次真实状态**（`load()`），不自己把"我以为删掉了"当成事实：服务端回执里
-       *      虽然带了 `state`，但走 `load()` 与 `apply()` 是同一条路径 ⇒ 界面停在旧状态的机会为零。
-       *   ③ 回执如实说**这次到底改了没有**（`saved`/`changed`）与**要不要重启**（`needsRestart`）——
-       *      没有改动时不许说"已删除"。
-       */
-      function removeMidasRow() {
-        setBusy(true); setErr(''); setMsg(''); setArmRemove(false)   // 开新一轮一律先撤掉旧的武装位与旧回执
-        fetch('/plugins/dsh-expert-team/memory-backend', {
-          method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action: 'remove-midas-row' }),
-        }).then(function (r) { return r.json().catch(function () { return null }).then(function (dd) { return { ok: r.ok, d: dd } }) }).then(function (res) {
-          setBusy(false)
-          if (!res.ok || !res.d || !res.d.ok) { setErr(((res.d && (res.d.errors || [res.d.error])) || ['移除失败']).join('；')); return }
-          load()   // 回读服务端真实状态（`midasRowPresent` 必须已经是 false —— 与 `apply()` 同一口径）
-          var d = res.d
-          // 没有改动 ⇒ 不许说"已删除"（"本来就没有"与"刚删掉"是两件事，服务端 `changed`/`saved` 分得开）。
-          if (!d.saved) setMsg(t('本次没有改动 ⇒ 那一行本来就不在（或形态不认识、服务端没动它）。', 'No change was made — the row was not there (or its shape was unknown, so nothing was touched).'))
-          else setMsg(d.needsRestart
-            ? t('已移除 profile 补丁里那个 mcp-midas 行。⚠ 需要重启 dsh web 才生效（profile 补丁在加载 profile 时读取）。',
-                'Removed the mcp-midas row from the profile patch. ⚠ A dsh web restart is required for it to take effect (the patch is read when the profile loads).')
-            : t('已移除 profile 补丁里那个 mcp-midas 行。', 'Removed the mcp-midas row from the profile patch.'))
-        }).catch(function (e) { setBusy(false); setErr(String(e && e.message ? e.message : e)) })
-      }
-      var disp = st.display || {}
-      // 状态文字走**文本级**三档类（ok / bad / warn-text）。⚠️ 这里**必须**是 `exp-hs-warn-text` 而不是
-      // `exp-hs-warn`：后者是一个告警**框**（margin/padding/边框/左重条/渐变背景），挂在这个内联 <span>
-      // 上就会画出用户截图里那个"缺边的破框"—— 三档里**只有 warn 这一档**会这样（ok/bad 本来就只是文字色）。
-      // `.exp-hs-warn` 只允许挂在块级容器上：本块顶部的重启提示、HindsightBlock 里那处当前故障告警框。
-      var cls = disp.level === 'ok' ? 'exp-hs-ok' : (disp.level === 'bad' ? 'exp-hs-bad' : 'exp-hs-warn-text')
-      var unreachableish = st.statusKind === 'on-failing' || st.statusKind === 'on-unconfigured'
-      // ⚠️ 重启提示**必须显眼且靠上**（2026-09-17 用户原话：「重启提示出现了 但是在最下面 用户可能
-      // 看不到 需要有明显提示」）。此前它只是最底下那行绿色回执里的一段 ⇒ 改完一屏之内看不到。
-      // 现在复用本块既有的琥珀色重条（`.exp-hs-warn`）并加粗标题，紧跟在三选一**正下方**。
-      // 文案一个字都不新写：整句仍由 `memoryBackendParts` 产出（标题 = restartHead，原因 = restartWhy）。
-      var restartNotice = (receipt && receipt.restart)
-        ? h('div', { className: 'exp-hs-warn exp-hs-restart', role: 'status' },
-            h('div', { className: 'exp-hs-restart-h' }, esc('⚠ ' + receipt.restartHead)),
-            receipt.restartWhy ? h('div', null, esc(t('原因：', 'Why: ') + receipt.restartWhy)) : null)
-        : null
-      // 底部回执只说告警框**没说**的那半句：重启要求已经显著提示过，同一句话印两遍会让人以为发生了两件事。
-      var bottomMsg = err ? '✗ ' + err : String(msg || '')
-      if (!err && receipt && receipt.restart) bottomMsg = receipt.receipt
-
-      // ── Midas 首装引导（2026-09-19 一期）──────────────────────────────────────────────
-      // 只在**用户真的选了 midas 且还没就绪**时渲染：一个块级 section（不是内联 span —— 内联挂盒子类
-      // 就是 2026-09-17 那个"缺边的破框"的成因）。它是这一期的主要交付物：任何人装上本插件后，
-      // 在这里就能看懂 Midas 是什么、现在卡在哪一步、下一步该敲哪条命令。
-      //
-      // 三条纪律：
-      //   ① **结论在上、动作在下**：状态句仍由上面那一行「实际状态」给（`display`），这里不重写同义句；
-      //   ② **命令全部来自服务端**（`midasSetup.steps`）—— 客户端是手写 bundle、不能 `import lib/`，
-      //      硬编一份就等于"同一件事两个家"，profile 名一变就分叉（中文标签就是这样传过来的）；
-      //   ③ **`unknown` 不给结论也不给命令清单的假安慰**：服务端在那一档会把"探测不可用"说清楚，
-      //      这里照原样呈现（同一份 `steps` 仍在，因为"怎么装"在任何一档都是有用的事实）。
-      var midasSetup = cur === 'midas' ? (st.midasSetup || null) : null
-      var midasGuide = (midasSetup && !midasSetup.ready)
-        ? h('div', { className: 'exp-hs-midas-guide', role: 'status' },
-            h('div', { className: 'exp-hs-midas-guide-h' }, esc(t('Midas 还没接通 —— 按下面三步装好它', 'Midas is not connected yet — three steps to make it work'))),
-            h('div', { className: 'exp-settings-note' }, esc(plainText(t(String((midasSetup.why || {}).zh || ''), String((midasSetup.why || {}).en || (midasSetup.why || {}).zh || ''))))),
-            // 代价说在前面（不吹）：它不做整会话摘要 —— 这是它的设计取舍，不是缺陷，但必须让人知道。
-            h('div', { className: 'exp-settings-note' }, esc(plainText(t(String((midasSetup.tradeoff || {}).zh || ''), String((midasSetup.tradeoff || {}).en || (midasSetup.tradeoff || {}).zh || ''))))),
-            h('ol', { className: 'exp-hs-midas-steps' },
-              (midasSetup.steps || []).map(function (sp, i) {
-                return h('li', { key: 'midas-step-' + i },
-                  h('span', null, esc(plainText(t(String(sp.zh || ''), String(sp.en || sp.zh || ''))))),
-                  sp.command ? h('code', null, esc(String(sp.command))) : null,
-                  sp.command ? h('button', { className: 'exp-hs-copy', onClick: function () { copyText(sp.command) } }, esc(t('复制', 'Copy'))) : null)
-              })),
-            // 找过哪里（诚实：结论从哪来）——`lookedAt` 是服务端截断好的**纯文本**，客户端不拼路径。
-            midasSetup.lookedAt ? h('div', { className: 'exp-settings-note' }, esc(t('已经找过：', 'Already looked in: ') + plainText(midasSetup.lookedAt))) : null,
-            // 探测（用户点了才真的启动一次进程）：这一档才区分得出"装了但起不来"。
-            h('div', { className: 'exp-hs-actions' },
-              h('button', { className: 'exp-hs-btn', disabled: busy, onClick: function () { setBusy(true); load(true).then(function () { setBusy(false) }) } },
-                esc(t('探测一次启动（会真的启动一次 Midas）', 'Probe startup once (really starts Midas once)')))),
-            (midasSetup.start && midasSetup.start.ok === false)
-              ? h('div', { className: 'exp-hs-msg bad' }, esc(t('探测失败：', 'Probe failed: ') + plainText(String(midasSetup.start.error || '')) + (midasSetup.start.stderr ? t('；stderr 摘要：', '; stderr: ') + plainText(String(midasSetup.start.stderr)) : '')))
-              : null,
-            (midasSetup.start && midasSetup.start.ok === true)
-              ? h('div', { className: 'exp-hs-msg' }, esc(t('探测成功：MCP 握手已通过（记忆要重启 dsh web 后才真的走它）。', 'Probe succeeded: the MCP handshake went through (memory only switches after a dsh web restart).')))
-              : null)
-        : null
-
-      // ── 「off 但 mcp-midas 行还在」的诚实话 + 一键移除（2026-09-19）───────────────────────────
-      // 为什么这块必须存在：选 `off` 只写 `hindsight: disabled: true`，**不碰**那个 `- insert:` 包裹的
-      // `mcp-midas` 行 ⇒ Midas 的 MCP 服务照样随 dsh web 启动、`mcp__midas__*` 工具照样注册在模型的
-      // 工具面上，而界面原来只说"不会有任何记忆调用" —— 那句话在那个格子里是**假的**。
-      //
-      // ⚠️ **防御性读法**（本轮硬约束）：服务端那两个新字段可能晚于本文件落地。所以判据一律写成
-      // `st.midasRowPresent === true` 而不是真值判断 —— 旧服务端下它是 `undefined` ⇒ 这一段
-      // **一个字都不渲染**（没有警告、没有按钮），既不误报也不假报。**绝不用 `!st.midasRowPresent`
-      // 之类的反写**：那会把 `undefined` 当成"行不在"，等于替旧服务端编一个它没给的结论。
-      // ⚠️ 渲染成**块级 `<div>` + 专用文字类 `.exp-hs-offwarn`**，不是 `exp-hs-warn`：后者是告警
-      // **框**且被 ⑦d 钉在恰好 2 处（重启提示 / 诊断块故障），这里既不是那两处、也不该占用它。
-      var midasRowLive = st.midasRowPresent === true
-      // ⚠️ 告警的判据**不是** `midasRowLive`（2026-09-19 语义变更配套修复）：三选一现在真的是**互斥**的 ——
-      // `midas` 档的**目标形态**就是 `{hindsight 行 disabled} × {mcp-midas 行在}`，而 `off` 档落地时会把
-      // 那一行**连根删掉**；**同一个物理状态**在 `midas` 下是"已接通"（ok）、在 `off` 下才是"没写成的关闭
-      // 动作的残留"（warn）。只看 `midasRowPresent` 就等于把这个不对称**抹平**：用户**成功**选中 Midas 时
-      // 会看到下面这段"你这里是一堆残留"的琥珀告警 —— 与功能目的正好相反（本仓 2026-09-17 那个"缺边的
-      // 破框"级别的自伤）。所以告警改键在**服务端自己的结论** `statusKind === 'off-midas-row-live'` 上：
-      // 服务端**只**在 `stored === 'off' && hindsightDisabled && midasRowPresent` 时才发这一档
-      //（`lib/memory-backend.js` 的 `off-midas-row-live`），这正是"这一格是残留"的**唯一**权威判据。
-      // 为什么不在客户端自己再推一遍（`stored === 'off' && …`）：服务端已经是"这个组合坏不坏"的**唯一
-      // 事实源**，客户端重推一次就是**同一件事两个家** —— 下次服务端改分档（本仓第一号返工来源）时两边
-      // 必然分叉，而界面会拿旧口径说新状态。客户端只做一件事：**照渲染服务端给的结论**。
-      // 这与本文件既有的 `unreachableish`（上面读 `st.statusKind === 'on-failing' / 'on-unconfigured'`）
-      // 是**同一套成熟写法**，不是新发明。
-      // ⚠️ 防御性读法照旧：旧服务端没有 `statusKind` ⇒ 它是 `undefined` ⇒ 这一段**一个字都不渲染**。
-      var offLeftover = st.statusKind === 'off-midas-row-live'
-      var midasRowId = plainText(String(st.midasRowId || 'mcp-midas'))
-      var midasServerName = plainText(String(st.midasServerName || 'midas'))
-      var midasRowWarn = offLeftover
-        ? h('div', { className: 'exp-hs-offwarn', role: 'status' }, esc(t(
-            '⚠ 补丁里那个 - insert: 包裹的 ' + midasRowId + ' 行还在 —— 所以这不是"记忆完全没接"。'
-            + '重启 dsh web 后，' + midasServerName + ' 的 MCP 服务照样启动、它的工具照样注册在模型的工具面上。'
-            + '区别在于：没有任何东西会自动调用它们 —— 本插件不再自动读写记忆，只有你自己（或别的会话）显式调那些工具时才会动到库。',
-            '⚠ The - insert:-wrapped ' + midasRowId + ' row is STILL in the patch — so this is NOT "no memory wiring at all". '
-            + 'After a dsh web restart the ' + midasServerName + ' MCP server still starts and its tools stay registered on the model\'s tool surface. '
-            + 'The difference: nothing calls them automatically — this plugin no longer reads or writes memory on its own; only an explicit tool call (by you or another session) touches the store.')))
-        : null
-      // 只在服务端明确说"能安全删"时才给按钮；`midasRowPresent` 为真但删不动（读不到文件 / 形态不认识 /
-      // 删完文件会非法）时**照旧显示警告、但把按钮去掉**，并如实说"得手工处置" ——
-      // 给一个点了必然失败的按钮比不给按钮更糟（用户会以为是自己的操作错了）。
-      var midasRowAction = (midasRowLive && st.midasRowRemovable === true)
-        ? h('div', { className: 'exp-hs-actions' },
-            h('button', { className: 'exp-hs-btn danger', disabled: busy, onClick: function () { if (armRemove) removeMidasRow(); else setArmRemove(true) } },
-              esc(armRemove
-                ? t('再点一次：移除 mcp-midas 那一行', 'Click again: remove the mcp-midas row')
-                : t('移除 mcp-midas 那一行', 'Remove the mcp-midas row'))))
-        : (midasRowLive
-          ? h('div', { className: 'exp-settings-note' }, esc(t('这一行不能用这里的按钮安全移除（补丁读不到、或形态不认识）⇒ 请手工删掉它，然后重启 dsh web。',
-              'This row cannot be safely removed by the button here (the patch is unreadable, or its shape is unknown) — delete it by hand, then restart dsh web.')))
-          : null)
-      // ⚠️ **渲染**用的是这个（与上面那条告警**同一个**判据）—— `midasRowAction` 回答的是"按钮做不做得
-      // 出来"（**能力**问题），这里回答的是"这个按钮该不该出现在这一格"（**语境**问题）。两者都对，但只有
-      // 后者是这一格要问的：健康的 `midas` 档下 `midasRowRemovable` 本来就是 true（那一行**确实**删得动，
-      // 字段没说谎），所以只按能力判据渲染的话，一个**刚接通 Midas** 的用户会在"已接通"旁边看到一颗
-      // 「移除 mcp-midas 那一行」的红色按钮 —— 那等于请他去拆自己刚配好的东西，与三选一互斥语义下
-      // `midas` 档的目标形态**直接矛盾**（本仓第一号返工来源：同一件事两个家）。真想删的用户并不缺路径：
-      // 选 `off` 保存一次（新语义下那一步会**真的**连行一起删掉），或自己编辑补丁文件。
-      // 两块都键在 `offLeftover`（= 服务端的 `off-midas-row-live`）⇒ 告警与按钮**永远同进同退**，
-      // 结构上不可能出现"有按钮没解释"或"有解释没按钮"。
-      var midasRowActionShown = (offLeftover && st.midasRowRemovable === true)
-        ? midasRowAction
-        : (offLeftover
-          ? h('div', { className: 'exp-settings-note' }, esc(t('这一行不能用这里的按钮安全移除（补丁读不到、或形态不认识）⇒ 请手工删掉它，然后重启 dsh web。',
-              'This row cannot be safely removed by the button here (the patch is unreadable, or its shape is unknown) — delete it by hand, then restart dsh web.')))
-          : null)
-
-      return h('div', { className: 'exp-hs-form' },
-        h('div', { className: 'exp-settings-group' }, esc(t('记忆后端 · 三选一', 'Memory backend · choose one'))),
-        h('div', { className: 'exp-hs-row' },
-          h('span', { className: 'exp-hs-label exp-hs-label-mb' }, esc(t('写哪个后端', 'Which backend'))),
-          h('select', { className: 'exp-hs-select exp-hs-select-narrow', value: cur, disabled: busy, onChange: function (e) { apply(e.target.value) } },
-            values.map(function (v) { return h('option', { key: v, value: v }, esc(labels[v] || v)) }))),
-        restartNotice,
-        h('div', { className: 'exp-hs-kv' },
-          h('span', { className: 'exp-hs-k' }, esc(t('实际状态', 'Actual state'))),
-          // `exp-hs-v-status` 只挂这一列：状态是一句中英混排的话，不需要共享的 `word-break:break-all`
-          // （它会把拉丁词从中间劈开）；下一行「profile 补丁」的路径仍用共享的值列规则。
-          h('span', { className: 'exp-hs-v exp-hs-v-status' }, h('span', { className: cls }, esc(plainText(t(String(disp.zh || ''), String(disp.en || disp.zh || ''))))))),
-        h('div', { className: 'exp-hs-kv' },
-          h('span', { className: 'exp-hs-k' }, esc(t('profile 补丁', 'Profile patch'))),
-          h('span', { className: 'exp-hs-v' },
-            h('code', null, esc(String(st.patchPath || ''))),
-            h('span', { className: 'exp-settings-note' }, esc(st.patchExists
-              ? (st.hindsightDisabled ? t('（Hindsight 行已禁用）', ' (the hindsight row is disabled)') : t('（Hindsight 行未禁用）', ' (the hindsight row is not disabled)'))
-              : t('（文件不存在）', ' (file absent)'))))),
-        // ── (D) 同一行里并排说出**另一个**补丁事实（2026-09-19）────────────────────────────
-        // 为什么紧挨着「profile 补丁」那一行：这两件事说的是**同一个文件**里躺着的两行
-        //（`hindsight` 行 / `mcp-midas` 行）—— 分开摆会让人以为要去看两个地方。
-        // ⚠️ 非 midas 情形下这一整段是 `null` ⇒ 上面那句 Hindsight 文案**逐字不变**
-        //（有测试钉着那句），旧服务端下同样一个字都不多。
-        // ⚠️ 仍走防御性读法（`=== true`）：旧服务端 `undefined` ⇒ 不渲染、不编造。
-        midasRowLive
-          ? h('div', { className: 'exp-settings-note' }, esc(t('（另外：profile 补丁里 mcp-midas 那一行仍在）', ' (also: the mcp-midas row is still in the profile patch)')))
-          : null,
-        // 警告与「移除那一行」的按钮：紧跟「实际状态 / profile 补丁」这两行事实**正下方**
-        //（约束：必须排在第一个 `exp-hs-kv` **之后** —— 首个 `exp-hs-kv` 是重启告警框定位的锚点）。
-        // ⚠️ 两块都由服务端的 `off-midas-row-live` 决定（残留才说、残留才给按钮）—— 见上面那两段注释。
-        midasRowWarn,
-        midasRowActionShown,
-        // Midas 首装引导：摆在「实际状态」那句实话**正下方**（先看到"现在没接通"，紧接着就是"怎么接通"）。
-        midasGuide,
-        // ⚠️ 这一句是这块界面存在的理由之一：把"故障"与"你的选择"分开说，别让人去关一个本来该开的开关。
-        unreachableish
-          ? h('div', { className: 'exp-settings-note' }, esc(t('注意：这与「你选了不使用」不是一回事 —— 你的选择是 Hindsight，只是它可能不通；先看下面的诊断，不要用「不使用」来绕过故障。',
-            'Note: this is NOT the same as choosing "off" — Hindsight IS your selection, it just may be unreachable; read the diagnostics below instead of turning memory off to hide the failure.')))
-          : null,
-        (st.notes && st.notes.length) ? h('ul', { className: 'exp-hs-notes' }, st.notes.map(function (n, i) { return h('li', { key: 'mb' + i }, esc(plainText(n))) })) : null,
-        h('div', { className: 'exp-hs-msg' + (err ? ' bad' : '') }, esc(bottomMsg)))
-    }
-
-    function HindsightBlock(props) {
-      var onSettings = (props && props.onSettings) || null
-      // 当前设置里的后端值 —— 只当"要不要重新拉状态"的刷新信号用（见 MemoryBackendBlock 注释）。
-      var memoryBackend = (props && props.memoryBackend) || ''
-      var dS = useState(null); var d = dS[0], setD = dS[1]
-      var pS = useState(null); var probed = pS[0], setProbed = pS[1]
-      var eS = useState(''); var err = eS[0], setErr = eS[1]
-      var bS = useState(false); var busy = bS[0], setBusy = bS[1]
-      // ── 写路径的表单状态：只装**用户正在输入的东西**，初始全空 ⇒ 绝不预填 token ──
-      var mS = useState(''); var mode = mS[0], setMode = mS[1]
-      var uS = useState(''); var url = uS[0], setUrl = uS[1]
-      var tS = useState(''); var token = tS[0], setToken = tS[1]
-      var gS = useState(''); var msg = gS[0], setMsg = gS[1]
-      var wS = useState(false); var saving = wS[0], setSaving = wS[1]
-      var cS = useState(''); var armClear = cS[0], setArmClear = cS[1]   // 「再点一次确认」武装的键（'' = 未武装）
-      var nS = useState([]); var postNotes = nS[0], setPostNotes = nS[1]
-      var sid = useCurrentSessionId()
-      function load(withProbe) {
-        var q = '/plugins/dsh-expert-team/hindsight-config'
-        var sep = '?'
-        if (withProbe) { q += sep + 'probe=1'; sep = '&' }
-        if (sid) q += sep + 'sessionId=' + encodeURIComponent(String(sid))
-        if (withProbe) { setBusy(true); setErr('') }
-        return fetch(q).then(function (r) {
-          return r.json().catch(function () { return null }).then(function (dd) { return { ok: r.ok, d: dd } })
-        }).then(function (res) {
-          setBusy(false)
-          if (!res.ok || !res.d || !res.d.ok) {
-            setErr(t('读取记忆后端诊断失败：', 'Reading memory-backend diagnostics failed: ') + String((res.d && res.d.error) || ''))
-            return
-          }
-          if (withProbe) setProbed(res.d); else setD(res.d)
-        }).catch(function (e) { setBusy(false); setErr(String(e && e.message ? e.message : e)) })
-      }
-      // 进页面只拉一次（**不带 probe** ⇒ 不发任何探测请求；探测必须由用户点）。
-      useEffect(function () { load(false) }, [])
-      function copyPath() {
-        try { navigator.clipboard.writeText(String((d && d.path) || '')) } catch (e) { /* 复制失败不影响只读展示 */ }
-      }
-      /** 提交一次写：`body` 里**只放用户明确改动的键**（清除走 `clear`）。 */
-      function submit(body) {
-        setSaving(true); setErr(''); setMsg('')
-        fetch('/plugins/dsh-expert-team/hindsight-config', {
-          method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body),
-        }).then(function (r) {
-          return r.json().catch(function () { return null }).then(function (dd) { return { ok: r.ok, d: dd } })
-        }).then(function (res) {
-          setSaving(false)
-          if (!res.ok || !res.d || !res.d.ok) {
-            setErr(((res.d && res.d.errors) || [t('保存失败', 'save failed')]).join('；'))
-            return
-          }
-          var r = res.d
-          setPostNotes(r.notes || [])
-          // 表单清空 —— **尤其是 token 输入框**（提交过就不再留在界面上）。
-          setMode(''); setUrl(''); setToken(''); setArmClear('')
-          setMsg(r.saved
-            ? t('已保存', 'Saved') + ((r.changed || []).length ? '：' + r.changed.join('、') : '') + ' —— ' + (r.needsRestart
-              ? t('需重启 dsh web 才生效', 'restart dsh web to take effect')
-              : t('无需重启（token 在 401 时会重读）', 'no restart needed (the token is re-read on 401)'))
-            : t('提交的内容与现有配置一致 ⇒ 没有改动、未写盘', 'Nothing changed — nothing was written'))
-          load(false)
-        }).catch(function (e) { setSaving(false); setErr(String(e && e.message ? e.message : e)) })
-      }
-      function saveForm() {
-        var body = {}
-        if (mode) body.serverMode = mode
-        if (url.trim() !== '') body.apiUrl = url.trim()
-        if (token !== '') body.apiToken = token
-        if (!Object.keys(body).length) {
-          setErr(t('表单是空的：请先改形态/地址，或填入 token（要清除已有 token 请按「清除 token」）。',
-            'The form is empty: change the mode/URL or type a token (use “Clear token” to remove one).'))
-          return
-        }
-        submit(body)
-      }
-      /** 显式清除：token 要**再点一次确认**（防误删）；地址一次即可。 */
-      function clearKey(key) {
-        if (key === 'apiToken' && armClear !== 'apiToken') {
-          setArmClear('apiToken'); setErr('')
-          setMsg(t('再点一次「确认清除 token」才会真正删除。', 'Click “Confirm clear token” once more to actually delete it.'))
-          return
-        }
-        submit({ clear: [key] })
-      }
-      if (!d) {
-        return h('div', { className: 'exp-hs' },
-          h('div', { className: 'exp-settings-group' }, esc(t('记忆后端（Hindsight）· 诊断与配置', 'Memory backend (Hindsight) · diagnostics & settings'))),
-          // 三选一自己从 `/memory-backend` 取状态 ⇒ 诊断读不到时**仍然**能选后端（两条路互不阻塞）。
-          h(MemoryBackendBlock, { onSettings: onSettings, refresh: memoryBackend }),
-          h('div', { className: 'exp-settings-note' }, esc(err || t('（正在读取记忆后端配置…）', '(loading memory backend…)')))
-        )
-      }
-      var rows = []
-      rows.push(h('div', { key: 'hs-path', className: 'exp-hs-kv' },
-        h('span', { className: 'exp-hs-k' }, esc(t('配置文件', 'Config file'))),
-        h('span', { className: 'exp-hs-v' }, h('code', null, esc(String(d.path || ''))),
-          h('button', { className: 'exp-hs-copy', onClick: copyPath }, esc(t('复制路径', 'Copy path'))))))
-      rows.push(h('div', { key: 'hs-exists', className: 'exp-hs-kv' },
-        h('span', { className: 'exp-hs-k' }, esc(t('是否已配置', 'Configured'))),
-        h('span', { className: 'exp-hs-v' }, d.exists
-          ? h('span', { className: 'exp-hs-ok' }, esc(t('已找到配置文件', 'config file found')))
-          : h('span', { className: 'exp-hs-bad' }, esc(t('未找到（可能未配置或使用默认值）', 'not found (unconfigured or using defaults)'))))))
-      rows.push(h('div', { key: 'hs-mode', className: 'exp-hs-kv' },
-        h('span', { className: 'exp-hs-k' }, esc(t('部署形态', 'Server mode'))),
-        h('span', { className: 'exp-hs-v' }, esc(String(d.serverMode || t('（未声明）', '(not declared)'))))))
-      rows.push(h('div', { key: 'hs-url', className: 'exp-hs-kv' },
-        h('span', { className: 'exp-hs-k' }, esc(t('服务地址', 'API URL'))),
-        h('span', { className: 'exp-hs-v' }, esc(String(d.apiUrlEffective || d.apiUrl || t('（未声明）', '(not declared)'))),
-          d.apiUrl && d.apiUrlEffective && d.apiUrl !== d.apiUrlEffective
-            ? h('span', { className: 'exp-settings-note' }, esc(t('（daemon 形态会强制本地地址）', ' (daemon mode forces the local URL)'))) : null)))
-      rows.push(h('div', { key: 'hs-token', className: 'exp-hs-kv' },
-        h('span', { className: 'exp-hs-k' }, esc(t('访问令牌', 'API token'))),
-        h('span', { className: 'exp-hs-v' }, d.apiTokenConfigured
-          ? h('span', { className: 'exp-hs-ok' }, esc(t('已配置 ✓（值不显示）', 'configured ✓ (value never shown)')))
-          : h('span', { className: 'exp-hs-bad' }, esc(t('未配置', 'not configured'))))))
-      if (d.bankForWorkspace) {
-        rows.push(h('div', { key: 'hs-bank', className: 'exp-hs-kv' },
-          h('span', { className: 'exp-hs-k' }, esc(t('本工作区的 bank', 'Bank for this workspace'))),
-          h('span', { className: 'exp-hs-v' }, h('code', null, esc(String(d.bankForWorkspace))))))
-      }
-      if (d.lastFailure && d.lastFailure.summary) {
-        // ⚠️ 历史失败 ≠ 当前故障（2026-09-16 两次纠错；第二次是"证据撑不起结论"）：
-        //   ① 旧实现一律按"当前故障"渲染 ⇒ 把两小时前的失败以现在时呈现（已修）；
-        //   ② 第二次修的：判"已恢复"**必须用同类证据** —— 那次失败是 `retain_failed`（写 memories），
-        //      而旧判据（一个把**一切无 error 记录**都算成"成功"的混合计数）把 `inject_ok`（读路径）、`session_start`（生命周期）、
-        //      `reflect_deferred_new_bank`（**被推迟**，根本没干活）全算成"成功" ⇒ 界面说"已恢复"，
-        //      但读者无法从中判断**写入**是否恢复。现在只认 `sfa.recovered`（= 其后有**同操作**的 `_ok`），
-        //      并在话术里点明是**哪一类**成功；证据不足时**一律按当前故障渲染**，绝不说"已恢复"。
-        var lf = d.lastFailure
-        var sfa = (lf.sinceFailure && typeof lf.sinceFailure === 'object') ? lf.sinceFailure : null
-        var same = (sfa && sfa.sameKind && typeof sfa.sameKind === 'object') ? sfa.sameKind : null
-        var recovered = !!(sfa && sfa.recovered === true)
-        var HS_OP_LABEL = {
-          retain: ['记忆写入 retain', 'memory write (retain)'],
-          pages: ['知识页写入 pages', 'knowledge-page write (pages)'],
-          inject: ['召回读取 inject', 'recall / inject'],
-          reflect: ['反思 reflect', 'reflect'],
-        }
-        // 未知操作**原样显示**事件里那个词（不替它编一个好听的名字 —— 分类是观察，不是结论）
-        var hsOpLabel = function (op) {
-          var key = String(op == null ? '' : op)
-          var pair = HS_OP_LABEL[key]
-          if (pair) return t(pair[0], pair[1])
-          return key ? key : t('（未知操作）', '(unknown op)')
-        }
-        // "其它类别的成功"要摆出来，但**必须**同时说清它们不构成证据
-        var hsOtherCounts = function () {
-          if (!sfa || !sfa.byKind || typeof sfa.byKind !== 'object') return ''
-          var parts = []
-          var label = { write: ['写入', 'write'], read: ['读取', 'read'], reflect: ['反思', 'reflect'], lifecycle: ['生命周期', 'lifecycle'], unknown: ['未知类别', 'unknown'] }
-          for (var k in label) {
-            if (!Object.prototype.hasOwnProperty.call(label, k)) continue
-            var b = sfa.byKind[k]
-            if (!b || !(b.ok > 0)) continue
-            if (k === (same && same.kind)) continue
-            parts.push(t(label[k][0], label[k][1]) + ' ' + String(b.ok))
-          }
-          if (sfa.emptyRecalls > 0) parts.push(t('召回为空', 'empty recalls') + ' ' + String(sfa.emptyRecalls))
-          return parts.length ? t('（另有：', '(also: ') + parts.join(' / ') + t(' —— 它们不构成"这一类已恢复"的证据）', ' — they do NOT prove THIS kind recovered)') : ''
-        }
-        if (recovered) {
-          rows.push(h('div', { key: 'hs-fail', className: 'exp-hs-hist' },
-            h('div', null,
-              h('span', { className: 'exp-hs-tag exp-hs-tag-ok' }, esc(t('历史 · 已恢复', 'historical · recovered'))),
-              h('span', { className: 'exp-hs-tag' }, esc(String(lf.classification || 'unknown'))),
-              esc(' ' + String(lf.at || '') + (lf.event ? ' · ' + String(lf.event) : ''))),
-            h('div', null, esc(t('这是 ', 'This failure happened at ') + String(lf.at || '')
-              + t(' 的历史失败（', ' ; it was a ')
-              + hsOpLabel(same && same.op)
-              + t(' 失败）；此后已有 ', ' failure); since then there have been ')
-              + String((same && same.count) || 0)
-              + t(' 次同类成功', ' same-operation successes')
-              + (same && same.lastAt ? t('（最近 ', ' (latest ') + String(same.lastAt)
-                + (same.lastMs == null ? '' : t('，耗时 ', ', took ') + String(same.lastMs) + ' ms') + '）' : '')
-              + t('。它现在不是当前故障 —— 因此不给你整改动作。', '. It is NOT a current failure, so no fix is suggested.'))),
-            h('div', null, esc(hsOtherCounts())),
-            h('div', { className: 'exp-hs-hint' }, esc(String(lf.summary || '')))))
-        } else {
-          var basis = (sfa && sfa.recovered === false)
-            ? t('尚无同类成功', 'no same-operation success yet')
-            : t('无法判定（缺后续证据）', 'cannot tell (no later evidence)')
-          rows.push(h('div', { key: 'hs-fail', className: 'exp-hs-warn' },
-            h('div', null, h('span', { className: 'exp-hs-tag' }, esc(String(lf.classification || 'unknown'))),
-              esc(' ' + String(lf.at || '') + (lf.event ? ' · ' + String(lf.event) : '')),
-              h('span', { className: 'exp-hs-tag' }, esc(basis))),
-            h('div', null, esc(sfa && sfa.recovered === false
-              ? t('这条失败是「', 'The failure was in ') + hsOpLabel(sfa.lastFailureOp)
-                + t('」；此后没有同一个操作的成功记录 ⇒ 不能据此说它已恢复。', ' — there is NO later success for that same operation, so it cannot be called recovered.')
-              : t('拿不到"此后有没有同类成功"的证据（诊断日志读不到或字段缺失）⇒ 不做判断。', 'No evidence about later same-operation successes (diag log unreadable or fields missing) — no judgement made.'))),
-            h('div', null, esc(hsOtherCounts())),
-            h('div', null, esc(String(lf.summary || ''))),
-            h('div', { className: 'exp-hs-hint' }, esc(t('这说明什么：', 'What this means: ') + String(lf.hint || '')))))
-        }
-      }
-      if (probed) {
-        rows.push(h('div', { key: 'hs-probe', className: 'exp-hs-kv' },
-          h('span', { className: 'exp-hs-k' }, esc(t('连通性', 'Reachability'))),
-          h('span', { className: 'exp-hs-v' }, probed.reachable === true
-            ? h('span', { className: 'exp-hs-ok' }, esc(t('可达 ✓ ', 'reachable ✓ ') + String(probed.probeMs == null ? '' : probed.probeMs + ' ms')))
-            : h('span', { className: 'exp-hs-bad' }, esc(t('不可达 ✗ ', 'unreachable ✗ ') + String(probed.probeMs == null ? '' : probed.probeMs + ' ms'))))))
-      }
-      var notes = (d.notes || []).concat(probed && probed.notes ? probed.notes : []).concat(postNotes)
-      // ── 写路径表单：只呈现"能改什么"，**不呈现任何已存的值**（token 尤其）──────────────
-      // 空输入 = 保持原值不变；清除是**独立按钮**（token 还要再点一次确认）——
-      // 空串当删除是最难排查的一类隐式语义，这里刻意不做。
-      var form = h('div', { className: 'exp-hs-form' },
-        h('div', { className: 'exp-hs-row' },
-          h('span', { className: 'exp-hs-label' }, esc(t('部署形态', 'Server mode'))),
-          h('select', { className: 'exp-hs-select', value: mode, onChange: function (e) { setMode(e.target.value) } },
-            h('option', { value: '' }, esc(t('（不修改）', '(leave unchanged)'))),
-            ['cloud', 'self-hosted', 'daemon'].map(function (m) { return h('option', { key: m, value: m }, m) }))),
-        h('div', { className: 'exp-hs-row' },
-          h('span', { className: 'exp-hs-label' }, esc(t('服务地址', 'API URL'))),
-          h('input', { className: 'exp-hs-input', type: 'text', value: url, spellCheck: false,
-            placeholder: t('留空 = 不修改（不要带 /v1）', 'empty = keep (do not include /v1)'),
-            onChange: function (e) { setUrl(e.target.value) } })),
-        h('div', { className: 'exp-hs-row' },
-          h('span', { className: 'exp-hs-label' }, esc(t('访问令牌', 'API token'))),
-          h('input', { className: 'exp-hs-input', type: 'password', value: token, autoComplete: 'off', spellCheck: false,
-            placeholder: d.apiTokenConfigured
-              ? t('已配置（留空 = 不修改；值不显示）', 'configured (empty = keep; value never shown)')
-              : t('未配置（留空 = 不修改）', 'not configured (empty = keep)'),
-            onChange: function (e) { setToken(e.target.value) } })),
-        h('div', { className: 'exp-hs-actions' },
-          h('button', { className: 'exp-hs-btn', onClick: saveForm, disabled: saving },
-            esc(saving ? t('保存中…', 'saving…') : t('保存', 'Save'))),
-          h('button', { className: 'exp-hs-btn danger', onClick: function () { clearKey('apiToken') }, disabled: saving || !d.apiTokenConfigured },
-            esc(armClear === 'apiToken' ? t('确认清除 token', 'Confirm clear token') : t('清除 token', 'Clear token'))),
-          h('button', { className: 'exp-hs-btn', onClick: function () { clearKey('apiUrl') }, disabled: saving || !d.apiUrl },
-            esc(t('清除地址', 'Clear URL')))),
-        h('div', { className: 'exp-hs-msg' + (err ? ' bad' : '') }, esc(err ? '✗ ' + err : (msg || ''))))
-      return h('div', { className: 'exp-hs' },
-        h('div', { className: 'exp-settings-group' }, esc(t('记忆后端（Hindsight）· 诊断与配置', 'Memory backend (Hindsight) · diagnostics & settings'))),
-        // 三选一摆在最上面：它是"要不要用记忆"这个更上位的问题，诊断回答的是"配好了没有/通不通"。
-        h(MemoryBackendBlock, { onSettings: onSettings, refresh: memoryBackend }),
-        rows,
-        // 这段以前是**一整块文字**（用户读不到重点，一屏之内也找不到"要不要重启"）。
-        // 拆成一屏可扫的条目：每条只讲一件事。与三选一顶部那条琥珀色告警**分工明确** ——
-        // 那条是**事件**（这一次真的改了补丁），这里是**一直成立的规则**，所以读起来不重复。
-        h('ul', { className: 'exp-hs-notes' },
-          h('li', null, esc(t('重启语义：改 serverMode / apiUrl 需要重启 dsh web；只改 apiToken 不需要（401 时会重读）。',
-            'Restart semantics: changing serverMode / apiUrl needs a dsh web restart; changing apiToken alone does not (it is re-read on 401).'))),
-          h('li', null, esc(t('上面的「记忆后端」若真的改了 profile 补丁，同样必须重启才生效（改完会在选择器正下方显著提示）。',
-            'If the backend selector above actually changed the profile patch, that also needs a restart (you get a prominent notice right under the selector).'))),
-          h('li', null, esc(t('保存前先校验；写入保留文件里其它键，并以 0600 权限原子替换。',
-            'Writes are validated first, keep every other key in the file, and replace it atomically with mode 0600.'))),
-          h('li', null, esc(t('token 的值在任何地方都不会回显（输入框也不预填）。',
-            'The token value is never echoed anywhere (the field is never pre-filled).')))),
-        form,
-        h('button', { className: 'exp-settings-retry', onClick: function () { load(true) }, disabled: busy },
-          esc(busy ? t('探测中…', 'probing…') : t('检测连通性', 'Check connectivity'))),
-        notes.length ? h('ul', { className: 'exp-hs-notes' }, notes.map(function (n, i) { return h('li', { key: 'n' + i }, esc(String(n))) })) : null)
-    }
-
     function DecisionCard(props) {
       var d = props.decision || {}
       var options = (d.options || []).map(function (o) {

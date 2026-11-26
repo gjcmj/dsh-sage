@@ -1866,58 +1866,6 @@
       ]
     },
     {
-      "id": "M143-hindsight-recovery-blind",
-      "title": "「历史失败 ≠ 当前故障」的判定变瞎（不再统计失败之后的成功）",
-      "why": "2026-09-16 新增（1.3.24 那场真机误导事故的防回归登记）。该判定的全部价值在于**与后续成功比较**：一旦 sinceFailure 的统计循环不再执行，successes 恒为 0 ⇒ 两小时前的历史失败又被当成当前故障、红色告警框与整改指令重新挂上 —— 这正是骗过用户与派工方的那个形态。 预期红：`① 失败之后有 2 次成功 ⇒ sinceFailure.successes === 2`、`最近成功的时间与耗时都取到`、`失败之后只有一次召回为空 ⇒ successes=0 / emptyRecalls=1`（共 4 项）。 本变异体已实测：基线绿 → 变异红 → **逐字节还原后 sha256 一致** → 再跑绿。",
-      "test": "hindsight-config.test.mjs",
-      "edits": [
-        {
-          "file": "lib/hindsight-config.js",
-          "find": "    for (let i = last.index + 1; i < lines.length; i += 1) {",
-          "replace": "    for (let i = lines.length; i < lines.length; i += 1) {"
-        }
-      ]
-    },
-    {
-      "id": "M144-host-state-perm-umask",
-      "title": "宿主状态文件权限退化成 umask 默认（token 就写在里头）",
-      "why": "2026-09-16 新增（lib/host-state-file.js 的防回归登记）。这些文件里可能有 token；权限靠**新建 inode 时指定 + chmod 兜住 umask** 两条一起保证。一旦默认模式退化成 0644，同机其他用户就能读到 Hindsight 配置文件里的 token —— 而功能测试、界面、日志全都正常，没有人会察觉。 预期红：`受控入口显式设 0600（文件）/ 0700（目录）`、`**文件权限 = 0600**（token 就在里头）`（实测 0644）、`覆写之后权限**仍是 0600**`（共 3 项）。 本变异体已实测：基线绿 → 变异红 → **逐字节还原后 sha256 一致** → 再跑绿。",
-      "test": "hindsight-config.test.mjs",
-      "edits": [
-        {
-          "file": "lib/host-state-file.js",
-          "find": "export const HOST_STATE_FILE_MODE = 0o600;",
-          "replace": "export const HOST_STATE_FILE_MODE = 0o644;"
-        }
-      ]
-    },
-    {
-      "id": "M145-config-write-validation-passthrough",
-      "title": "写路径校验不再拦截（非法形态也会往下走）",
-      "why": "2026-09-16 新增（Hindsight 配置写路径的防回归登记）。本仓对这条路的承诺是「**校验不过 ⇒ 一个字节都不落盘**」。一旦错误清单不再阻断，非法 serverMode / 带 /v1 的地址就会进入合并与落盘分支 —— 用户会得到一份被写坏的真实配置，而回执可能仍说 ok。 预期红：`非法 serverMode ⇒ 拒绝（没有可写文本）`、`带 /v1 的地址 ⇒ 拒绝`、`非 http(s) ⇒ 拒绝` 等（该测试共 12 项红）。 本变异体已实测：基线绿 → 变异红 → **逐字节还原后 sha256 一致** → 再跑绿。",
-      "test": "hindsight-config.test.mjs",
-      "edits": [
-        {
-          "file": "lib/hindsight-config-write.js",
-          "find": "  if (errors.length) {",
-          "replace": "  if (false && errors.length) {"
-        }
-      ]
-    },
-    {
-      "id": "M146-config-write-echoes-submitted",
-      "title": "回执回显用户提交的原值（哨兵 token 误粘即泄漏）",
-      "why": "2026-09-16 新增。本仓的「token 不回显」必须是**结构性**的：回执里根本不存在任何用户提交的原值，而不是「记得哪个字段是 token」。这条变异把提交值拼进错误信息 —— 于是把哨兵 token 误粘进 serverMode 的那种操作就会把它原样泄回响应与日志。 预期红：`**误粘进 serverMode / apiUrl / clear 的值，回执全文同样不回显**`（共 1 项）。 本变异体已实测：基线绿 → 变异红 → **逐字节还原后 sha256 一致** → 再跑绿。",
-      "test": "hindsight-config.test.mjs",
-      "edits": [
-        {
-          "file": "lib/hindsight-config-write.js",
-          "find": "    errors.push(`serverMode 只能是 ${HINDSIGHT_SERVER_MODES.join(' / ')}（提交的原值不在回执里回显）。`);",
-          "replace": "    errors.push(`serverMode 只能是 ${HINDSIGHT_SERVER_MODES.join(' / ')}「${set.serverMode}」（提交的原值不在回执里回显）。`);"
-        }
-      ]
-    },
-    {
       "id": "M147-roles-warm-deadline-at-kick",
       "title": "角色后台批的期限挪回 kick 时刻计算（1.3.22 那个按构造必然的零读回归）",
       "why": "2026-09-16 新增。1.3.22 的真回归：期限在 **kick 那一刻**按绝对时刻算好，而这一批要延迟 ~1000 ms 才开跑 ⇒ 开跑时期限已过期 ⇒ resolveSubRoles 在**第一次读之前**就 cut=deadline break ⇒ 一条都不读，而调用方照旧挂 warming:['roles']，界面显示「更新中」却永远不动。本条变异让批沿用调用方传进来的 kick 时刻绝对期限，正是那次事故的形状。 预期红：`① 延迟(150 ms) > 期限(60 ms) 时仍**必须读完这一条**`（实测 reads=0）、`① 队列真的前进了`（deferred=1）、`① 有进展 ⇒ 零进展标记不点亮`（共 4 项）。 本变异体已实测：基线绿 → 变异红 → **逐字节还原后 sha256 一致** → 再跑绿。",
@@ -1953,19 +1901,6 @@
           "file": "lib/command.js",
           "find": "      if ((Date.now() - since) <= SUBS_NOT_READY_MAX_MS) SUB_HEADER_STATS.notReady = true;",
           "replace": "      SUB_HEADER_STATS.notReady = true;"
-        }
-      ]
-    },
-    {
-      "id": "M150-same-kind-evidence-any-op",
-      "title": "「已恢复」的同类证据判据被放宽成「任何操作的成功都算」",
-      "why": "2026-09-16 新增（A 线：修「结论对、证据撑不起结论」）。真机事故：那次失败是 `retain_failed`（写 memories），而旧判据把 `inject_ok`（读路径）、`session_start`（生命周期）、`reflect_deferred_new_bank`（**被推迟**，根本没干活）全算成「成功」⇒ 界面说「已恢复」，读者却无法判断**写入**是否恢复。修法是只认**同类**证据（`op === lastFailureOp`）；把它放宽成 `if (true)`，跨类别/跨端点的成功就会重新被当成本类恢复的证据。 预期红：`② **写失败 + 其后只有读路径/生命周期 ⇒ recovered=false**`、`③ 失败在**读**路径、其后只有**写**成功 ⇒ recovered=false`、`④ 同类证据只认**同一个端点**`（**实测 3 项**）。",
-      "test": "hindsight-config.test.mjs",
-      "edits": [
-        {
-          "file": "lib/hindsight-config.js",
-          "find": "      if (op === since.lastFailureOp) {",
-          "replace": "      if (true) {"
         }
       ]
     },
@@ -2161,97 +2096,6 @@
           "file": "lib/command.js",
           "find": "  if (prev && prev.workspace && prev.workspace !== ws) return;",
           "replace": "  if (false) { return; } // MUTANT: 去掉「跨工作区不写」守卫"
-        }
-      ]
-    },
-    {
-      "id": "M166-memory-backend-hindsight-stays-disabled",
-      "title": "记忆后端：选了 `hindsight`（或 `off` 之后又切回 `hindsight`）时，不再把 `- id: hindsight` 那一行恢复成**启用** ⇒ 设置页说走 Hindsight，补丁却把整条后端禁着",
-      "why": "2026-09-17 新增，**2026-09-19 二期语义变更后重新锚定并重新计数**（本条守的缺陷类没变，变的是它所在的分支）。旧代码里这一行在「选 hindsight/midas 就清除禁用」的那条路上；二期把它收进 `editHindsightToEnabled()` —— 现在 `hindsight` / `off` / `midas`（**未接线**）三档共用它。`off` 的落地方式就是往 dsh profile 补丁里写 `- id: hindsight` + `disabled: true`；反方向的唯一正确动作是把那一行去掉（当它是我们的规范形态时）或把那个值改成 `disabled: false`。变异让这个分支恒不成立（`if (!hit || hit.disabled !== true)` 改成 `if (true)`）⇒ 用户从「不使用」切回「Hindsight」时，补丁文件**原样保留禁用**，而设置页显示「Hindsight」：界面上记忆是开的、实际一条都不会写。⚠️ 二期语义变更**加大了**这条变异的杀伤面：它现在同时打中「`midas` **未接线** ⇒ 必须恢复启用」这条**安全不变量**（未接线时若不恢复启用，用户就同时失去两个后端），以及新排他契约里 `hindsight` 那一档「MCP 行必须被移除」的断言（那一档的移除发生在 Hindsight 那一维改完之后，前一步恒 false ⇒ 后续断言拿到 null）。这个缺陷**只有测试能抓住** —— `planMemoryBackendPatch()` 出口那道自检只审「这次生成的新文本」，而变异走的是 `changed:false` 的早退分支，压根不经过自检。预期红（**2026-09-19 用 `--only M166` 的真实变异产物逐条数过，实测 11 项**；旧文里那句「实际是 5 项」是变更前的口径，已作废）：① 计划层 —— `非规范形态的 disabled:true ⇒ 改成 false（恢复启用）`、`hindsight ⇒ 删掉本插件追加的那一行，文件逐字回到原样`、`midas（**未接线**）⇒ 把 Hindsight 那一行恢复成启用（安全不变量…）`、`midas（未接线）⇒ 删掉的是本模块自己的规范形态那一行…`、`hindsight` ⇒ Hindsight 行**启用**（不再是禁用态）`、`hindsight` ⇒ **移除** `- insert:` 包裹的 mcp-midas 行…`、`midas`（**未接线**）⇒ 绝**不**把 Hindsight 留在禁用态…`、`midas`（未接线）+ 补丁里只有我们自己那一行 ⇒ Hindsight **恢复启用**、不写 MCP 行`；② 计划层之外（`applyMemoryBackend` 真的写盘那一段走同一个分支）—— `hindsight ⇒ 恢复原样（逐字）`、`midas（二进制缺失）⇒ 盘上补丁一个字节都没动`、`真的有改动时才 needsRestart:true`（`changed:false` ⇒ `needsRestart:false`，用户不会被提示重启）。**必须仍然绿**：`off（首次）⇒ ok + changed` 与 `off（第二次）⇒ changed:false 且文本逐字不变（幂等）`（`off` 方向不受影响），以及 `midas`（**已接线**）那一组（它走的是 `editHindsightToDisabled()`，与这条变异不是同一个分支 —— 那一组由 M172 守）。",
-      "test": "memory-backend.test.mjs",
-      "edits": [
-        {
-          "file": "lib/memory-backend.js",
-          "find": "  if (!hit || hit.disabled !== true) {",
-          "replace": "  if (true) { // MUTANT: 选 hindsight/midas 时不再清除「禁用 Hindsight」那一行"
-        }
-      ]
-    },
-    {
-      "id": "M167-memory-backend-selector-missing-from-main-branch",
-      "title": "记忆后端三选一被从**主分支**的渲染里删掉 ⇒ 设置页只剩只读诊断、用户没有入口去选后端（`MemoryBackendBlock` 变成死代码）",
-      "why": "2026-09-17 新增（独立只读核验指出：本轮最要紧的那块 UI 当时**零断言覆盖**，因此补了 ⑦b 一节源码级接线断言，并按本仓纪律给这条棘轮配一个能与它对应的判别变异）。变异把**主分支**里那一次 `h(MemoryBackendBlock, …)` 删掉（只留 `rows,`）。后果不是崩溃，而是**静默降级**：`!d` 的加载分支仍会渲染它，但正常路径（诊断读到的绝大多数时候）走的是主分支 ⇒ 用户看到的是一块没有后端选择器的诊断面板，而**没有任何测试会红** —— 函数还在、`node --check` 绿、纯函数断言全绿。预期红：`两个分支各渲染一次（!d 的加载分支 + 主分支 —— 诊断读不到时**仍然**能选后端）`（命中从 2 变 1）与 `两个分支的渲染顺序断言（因为上面没命中 2 处渲染，这一节无法成立）`（共 2 项；顺序断言依赖切片，切片不成立时**显式记一条红**而不是静默跳过）。**必须仍然绿**：`三选一组件真的被渲染（不是只定义了函数）`（加载分支那一处仍在 —— 这正是「只查存在」抓不住这个缺陷的证明）与 `候选值首选服务端给的 st.backends`。",
-      "test": "memory-backend.test.mjs",
-      "edits": [
-        {
-          "file": "client.js",
-          "find": "        h(MemoryBackendBlock, { onSettings: onSettings, refresh: memoryBackend }),\n        rows,",
-          "replace": "        rows,"
-        }
-      ]
-    },
-    {
-      "id": "M168-memory-backend-restart-callout-loses-role-status",
-      "title": "重启告警框丢了 `role: status` ⇒ 看起来还是那块琥珀色告示，但它不再是**可被读屏/自动化识别的状态区**",
-      "why": "2026-09-17 新增（判别变异，护航 ⑦c）。起因是**用户真机截图报的事故**：「重启提示出现了 但是在最下面 用户可能看不到 需要有明显提示」—— 修复把重启要求从块底那行绿字提成了选择器正下方的琥珀色告警框。这条框是**有条件**渲染的运行时状态（只在这一次真的改了 profile 补丁、因而需要重启时出现），所以它必须自报身份：`role: status` 让读屏软件与自动化在它出现时能读到，而不是只能靠肉眼扫到一个色块。变异只删掉这个属性：**没有任何测试会红** —— 选择器、类名、文案、位置、样式全在，`node --check` 绿，肉眼看起来一模一样。预期红（`--only M168` 实测 1 项）：`重启提示渲染成 .exp-hs-warn.exp-hs-restart 且带 role: status`。**必须仍然绿**：`告警框有条件渲染（判据 receipt && receipt.restart）`、`告警框是返回树里与选择器那一行平级的兄弟节点`、`需重启 dsh web 才生效 在**这条回执链**里只有一处` —— 它们证明抓住这条变异靠的是**属性级**断言，不是位置或文案断言顺手命中的。",
-      "test": "memory-backend.test.mjs",
-      "edits": [
-        {
-          "file": "client.js",
-          "find": "className: 'exp-hs-warn exp-hs-restart', role: 'status'",
-          "replace": "className: 'exp-hs-warn exp-hs-restart'"
-        }
-      ]
-    },
-    {
-      "id": "M169-memory-backend-label-width-back-to-ancestor-selector",
-      "title": "三选一的标签宽度退回**祖先选择器**（`.exp-hs-mb .exp-hs-label`）⇒ 标签退回 104px、又与下方 152px 键列错开（用户截图里那两条竖线的缺陷原样复现）",
-      "why": "2026-09-17 新增（**独立核验指出的结构性风险**，不是假想）：第一版修复图省事写成 `.exp-hs-mb .exp-hs-label{flex:0 0 152px}`，只因为 `MemoryBackendBlock` 现在恰好只渲染一个 `.exp-hs-label` 才没问题 —— 而 `HindsightBlock` 里那张配置表单（部署形态 / 服务地址 / 访问令牌）用的是**同一个共享类**、是兄弟节点；一旦那张表单被搬进三选一这块，三个无关标签会**静默**变宽。变异把规则改回那种写法（元素上的专用类 `exp-hs-label-mb` 仍在，但 CSS 不再匹配它）⇒ 标签退回 104px、与下方 152px 键列不再对齐，而**没有任何断言会红** —— 规则在场、类名在场、`node --check` 绿、渲染不报错。预期红（`--only M169` 实测 3 项）：`.exp-hs-label-mb 恰好 2 处（1 条 CSS + 1 个 JSX 挂点）`（2 → 1）、`样式表里**逐字**有这条规则：.exp-hs-label.exp-hs-label-mb`、`样式表里没有 .exp-hs-mb 这类**祖先依赖**的选择器（版式不靠 JSX 结构碰巧成立）`。**必须仍然绿**：`配置表单那三行仍是**裸** .exp-hs-label ⇒ 宽度 104px 不变`（本变异只动 CSS，JSX 侧那个计数不受影响 —— 这条断言红不红，说明的是「变异有没有碰到 JSX」，不是「缺陷抓没抓住」）与 `共享的 .exp-hs-label 基础规则逐字未动`。",
-      "test": "memory-backend.test.mjs",
-      "edits": [
-        {
-          "file": "client.js",
-          "find": "'.exp-hs-label.exp-hs-label-mb{flex:0 0 152px;max-width:152px}' +",
-          "replace": "'.exp-hs-mb .exp-hs-label{flex:0 0 152px;max-width:152px}' +"
-        }
-      ]
-    },
-    {
-      "id": "M170-memory-backend-restart-callout-title-not-bold",
-      "title": "重启告警框的标题**不再加粗**（`font-weight:700` 被删）⇒ 框还在、位置还在，但「第一眼读到要不要重启」这个修复目的落空",
-      "why": "2026-09-17 新增（判别变异 —— 刻意说明：这一条守的是**覆盖度**，不是「已发生过的 bug」，不是假想事故，写清楚免得后人误读）。用户的要求是「需要有明显提示」，而「明显」落到实现上是两件事：**位置**（选择器正下方，已有断言）与**视觉重量**（琥珀色重条 + 加粗标题 + 比正文大一档的字号）。变异只删掉 `.exp-hs-restart-h` 的 `font-weight:700` ⇒ 告警框仍在原位、文案一字不差、`node --check` 绿，只有「第一眼」没了。这正是 ⑦c 那一节最初只查**选择器文本存在**（`css.includes('.exp-hs-restart-h{')`）时**抓不住**的缺陷（独立核验用同一个反例证明过）⇒ 断言因此改成钉**逐字声明**。预期红（`--only M170` 实测 1 项）：`样式表里**逐字**有这条规则：.exp-hs-restart-h（加粗标题 ——「第一眼读到要不要重启」就靠这一条）`。**必须仍然绿**：`样式表里逐字有 .exp-hs-warn.exp-hs-restart` 与 `client-css-integrity.test.mjs` 的 `10 条曾静默丢失的规则全部在场` —— 后者只审「片段有没有进样式表」、不审声明内容，这正是本变异需要 ⑦c 这种**声明级**断言的原因。",
-      "test": "memory-backend.test.mjs",
-      "edits": [
-        {
-          "file": "client.js",
-          "find": "'.exp-hs-restart-h{font-weight:700;margin-bottom:2px}' +",
-          "replace": "'.exp-hs-restart-h{margin-bottom:2px}' +"
-        }
-      ]
-    },
-    {
-      "id": "M171-memory-backend-midas-removal-swallowed-sibling-blind",
-      "title": "「移除 mcp-midas 那一行」的**吞并行普查失明** ⇒ 畸形补丁上会连带删掉别人的条目，还报「已删除」",
-      "why": "2026-09-19 新增（判别变异，护航 ⑪）。这不是假想事故，而是本轮修复里**唯一会真的改用户补丁文件**的那条路径上的最后一道守卫：`planMidasRowRemoval()` 删块用 `splice(hit.start, hit.end - hit.start + 1)`，而 `findMidasInsertRow()` 的块尾规则是「其后每一行只要缩进更深就算这一块」—— 于是一条更深缩进的 `- id: other`（别人的序列项）会被**吞进** `mcp-midas` 这一块。函数因此先做一次**块形自检**：扫块内有没有 `- <key>:` 形状的更深深缩进行（`swallowedSiblingIdx`），有就 `refuse()`、一个字节不落盘。变异把那条正则换成恒假（`if (false)`）⇒ 自检永远看不见被吞进来的兄弟 ⇒ 兄弟普查从块尾之后开始、也算成 0 ⇒ 删表头时把 `- id: other` **一起删掉**，还附一句「唯一子项」的假说明、并回 `ok:true, changed:true`（**丢数据 + 假报成功**，两者都是本仓最忌讳的形态）。⚠️ 这种缩进在合法 YAML 里不成立（`insert` 的兄弟子项必须同缩进；实测 `js-yaml` 与 `yaml` v2 都拒收，DSH 自己在启动时就抛 `bad indentation of a sequence entry`）⇒ 守卫是**健壮性护栏**而非活跃路径，但它必须真的能拦住：宁可什么都不做，也不许在'前提无法核实'时动用户的文件。预期红（`--only M171` 实测 2 项，用真实变异运行器数过）：`畸形形态（块内更深缩进的 - id: …）⇒ **拒绝写入**（ok:false / text 恒为 null / changed:false：一个字节都不落盘）`（实测产物从 `null` 变成 `[]`，且报 changed:true）与 `畸形形态：拒绝是**有理由**的（错误里明说「拒绝写入」，不是静默返回 null）`（`errors` 从 3 条变成 0 条）。**必须仍然绿**：`★假阳性守卫★：args: 下的**标量**序列项（- '/some/bin/midas-mcp'）**不得**被当成「别人的条目」⇒ ok:true` 与 `★假阳性守卫★：同一份真实补丁删完之后，注释与既有顶层项**逐字**保留` —— 这两条正是「把正则放宽到恒真」那类错误修法的反面证据：本变异的失败模式（失明）与它们的失败模式（误拒）互为对照，只钉其中一边就会让另一边偷偷溜过去。",
-      "test": "memory-backend.test.mjs",
-      "edits": [
-        {
-          "file": "lib/memory-backend.js",
-          "find": "    if (/^\\s*-\\s+[^\\s#][^:]*:(\\s|$)/.test(lines[k])) swallowedSiblingIdx.push(k + 1);",
-          "replace": "    if (false) swallowedSiblingIdx.push(k + 1); // MUTANT: 吞并行普查失明（删表头会连带删掉别人的条目）"
-        }
-      ]
-    },
-    {
-      "id": "M172-memory-backend-wired-midas-leaves-hindsight-enabled",
-      "title": "记忆后端：**已接线**的 `midas` 档不再把 Hindsight 置为禁用 ⇒ 重启后两个记忆后端同时活着，而设置页只说了一个（二期要修的原始缺陷原样复现）",
-      "why": "2026-09-19 新增（判别变异，护航二期的「三档都是两行都管的真二选一」契约）。这不是假想事故，而是**用户报的那个缺陷本身**：二期之前选 `midas` 是**加法**（只往补丁里插 `- insert:` 包裹的 mcp-midas 行，Hindsight 那一行照旧启用）⇒ 重启后 Hindsight 继续注入上下文、继续按 token 计费，而设置页只显示「Midas」这一个后端 —— 用户以为换到了本地零 LLM 的后端，实际两边都在跑。二期的修法是把这一档变成「两件一起写」：插 MCP 行 **∧** 把 `- id: hindsight` 写成 `disabled: true`。变异把那个**合取**砍掉后半（`wantHindsightDisabled` 只留 `target === 'off'`）⇒ 走 `editHindsightToEnabled()`、Hindsight 那一行**保持启用**，而 MCP 行照旧插入、`planMemoryBackendPatch()` 出口自检也照旧通过（那一维的自检用的是同一个 `wantHindsightDisabled`，**变异体自己和自己一致** ⇒ 自检看不见它）。这正是本变异必须存在的原因：**出口自检审的是「生成的新文本符合本函数的意图」，而不是「意图本身对不对」** —— 意图被改错时，自检一定跟着错，只有测试能抓住。预期红（**2026-09-19 用 `--only M172` 的真实变异产物逐条数过，实测 4 项**）：`midas（**已接线**）⇒ Hindsight 那一行被写成 disabled: true（这一档是**真二选一**，不是加法）`、`midas（已接线）+ 补丁本来已禁用 ⇒ 禁用**保留**、MCP 行插入（「未接线 ⇒ 恢复启用 / 已接线 ⇒ 保留禁用」的判别点）`、`` `midas`（已接线）⇒ Hindsight 行 disabled: true **且** MCP 行在场（这是**健康**形态，不是矛盾） ``、`midas（已接线）⇒ 把**真的** hindsight 行置为禁用（配了真夹具 ⇒ 不再是恒真的空转断言）`。**必须仍然绿**：`midas + 发现到二进制 ⇒ 追加**规范的 insert 行**…`、`再跑一次 ⇒ changed:false 且文本逐字不变（幂等…）`、`路径变了 ⇒ **整块替换**那一行…`、`缩进不同也一样幂等（第二次 changed:false）` —— 这四条证明本变异只动了「关不关 Hindsight」那一维，MCP 行的插入/替换/幂等行为**不受影响**（抓住它的是**新**断言，不是旧断言顺手命中）。",
-      "test": "memory-backend.test.mjs",
-      "edits": [
-        {
-          "file": "lib/memory-backend.js",
-          "find": "  const wantHindsightDisabled = target === 'off' || (target === 'midas' && !!midas);",
-          "replace": "  const wantHindsightDisabled = target === 'off'; // MUTANT: 已接线的 midas 不再关 Hindsight ⇒ 两个后端同时活着"
         }
       ]
     },

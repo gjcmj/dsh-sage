@@ -7,6 +7,16 @@
 
 （暂无）
 
+## 1.9.1
+
+**主题：删掉记忆后端配置 —— 记忆交给宿主插件（Mnemon），本插件不再写 profile、不再产生 token 记忆后端**。
+
+### 变更
+
+- **移除**「记忆 → 记忆后端」设置组（Hindsight / Midas / off 三选一）及 Hindsight 诊断/配置界面、`/memory-backend` 与 `/hindsight-config` 两条路由、`lib/memory-backend.js`、`lib/hindsight-config*.js` 及对应测试。
+- **新增只读检测**：`GET /memory-status` + 设置页一行「记忆来源」（检测宿主的 Mnemon 是否就绪），**不提供开关**、不改 profile。
+- 设置组 6 → 5，设置项 29 → 27，基础视图 5 → 4；所有设置即时生效，不再有任何需要重启的项。
+- 测试 99 → 97；变异目录 176 → 164（删除指向已删测试的条目）。
 ## 1.9.0
 
 **主题：产品身份独立 —— 从「专家团 fork」变成 Sage（dsh-expert-sage）**。

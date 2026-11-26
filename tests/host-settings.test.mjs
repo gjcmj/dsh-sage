@@ -63,8 +63,8 @@ console.log('① schema 由 SETTINGS_SPEC 生成（单一真源），并刻意�
   check(schema.kind === 'object' && hostGroups.join(',') === specGroups.join(','),
     '宿主 schema 的分组集合 == `SETTINGS_GROUPS`（当前五组：身份 / 编制 / 显示 / 门禁 / 记忆 —— 集合相等，多一组少一组都红）',
     `host=${hostGroups.join(',')} ｜ spec=${settingsMod.SETTINGS_GROUPS.join(',')}`);
-  check(!!(schema.shape.memory && schema.shape.memory.shape && schema.shape.memory.shape.backend),
-    '新增的「记忆」组本身也上了官方面板（`memory.backend` 映射成 union）', Object.keys(schema.shape).join(', '));
+  check(!!(schema.shape.workflow && schema.shape.workflow.shape && schema.shape.workflow.shape.preset),
+    '「工作流」组上了官方面板（`workflow.preset` 映射成 union）', Object.keys(schema.shape).join(', '));
   check(schema.shape.roster.shape.maxTasks.kind === 'number', 'int 映射为 number', schema.shape.roster.shape.maxTasks.kind);
   check(z.calls.some(([m, v]) => m === 'min' && v === 0) && z.calls.some(([m, v]) => m === 'max' && v === 5000), 'int 的 min/max 取自 spec（0..5000）', JSON.stringify(z.calls.filter(([m]) => m !== 'default').slice(0, 4)));
   check(z.calls.some(([m, v]) => m === 'default' && v === 200), '默认值取自 spec（maxTasks 默认 200）');

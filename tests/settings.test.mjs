@@ -29,20 +29,20 @@ console.log('# F 线 · 设置控制台\n');
 console.log('① spec 与默认值（UI 表单结构也由它生成 ⇒ 新增设置项只改一处）');
 {
   const d = defaultSettings();
-  check(SETTINGS_GROUPS.join(',') === 'identity,roster,display,gates,workflow,memory', '六组：身份 / 编制 / 显示 / 门禁 / 记忆', SETTINGS_GROUPS.join(','));
-  check(BASIC_SETTING_PATHS.length === 5 && BASIC_SETTING_PATHS.every((p) => !!flatSpec()[p]), '基础视图 5 项都存在 spec 里', BASIC_SETTING_PATHS.join(','));
-check(Object.keys(flatSpec()).length === 28, '共 28 个设置项（4+5+5+5+8+1；工作流组 2026-11-26 新增，8 项），', String(Object.keys(flatSpec()).length));
+  check(SETTINGS_GROUPS.join(',') === 'identity,roster,display,gates,workflow', '五组：身份 / 编制 / 显示 / 门禁 / 工作流', SETTINGS_GROUPS.join(','));
+  check(BASIC_SETTING_PATHS.length === 4 && BASIC_SETTING_PATHS.every((p) => !!flatSpec()[p]), '基础视图 4 项都存在 spec 里', BASIC_SETTING_PATHS.join(','));
+check(Object.keys(flatSpec()).length === 27, '共 27 个设置项（4+5+5+5+8；记忆组已删除），', String(Object.keys(flatSpec()).length));
   check(d.roster.maxTasks === 200 && d.gates.tierGate === 'soft' && d.identity.profile === 'developer', '默认值符合既有行为（maxTasks=200 / 档位门 soft / 身份 developer）');
   const schema = settingsSchema();
-  check(schema.length === 6 && schema.every((g) => g.label && g.hint && g.items.length), 'schema 每组都有中文标签与说明', schema.map((g) => `${g.group}:${g.items.length}`).join(' '));
+  check(schema.length === 5 && schema.every((g) => g.label && g.hint && g.items.length), 'schema 每组都有中文标签与说明', schema.map((g) => `${g.group}:${g.items.length}`).join(' '));
   check(schema.flatMap((g) => g.items).every((i) => i.path.includes('.') && i.label && typeof i.default !== 'undefined'), '每个设置项都有 path/label/default（UI 直接渲染）');
   check(getSetting(d, 'roster.maxTasks') === 200 && getSetting(d, 'nope.nope') === undefined, 'getSetting 取默认、未知项 undefined');
-  check(d.memory.backend === 'hindsight', '`memory.backend` 的默认值 = 本功能上线前的行为（Hindsight）', String(d.memory.backend));
+  check(d.workflow.preset === 'software', '工作流预设有默认值（通用软件）', String(d.workflow.preset));
 
   // 1.3.2：枚举项的**中文标签**（规格层单一真源）。标签只影响可读性 ⇒ **值域/类型/默认值不许变**，
   // 但必须"每个值都有标签"，否则下拉里会露出英文标识（这正是本次要修的）。
   const enums = schema.flatMap((g) => g.items).filter((i) => i.type === 'enum');
-  check(enums.length === 8, '恰好 8 个枚举项（新增枚举项时这条会提醒你同时补标签断言面）', String(enums.length));
+  check(enums.length === 7, '恰好 7 个枚举项（新增枚举项时这条会提醒你同时补标签断言面）', String(enums.length));
   for (const it of enums) {
     const vals = (it.values || []).slice().sort();
     const keys = Object.keys(it.labels || {}).sort();
@@ -113,7 +113,7 @@ const call = async (method, body) => {
 {
   const g = await call('GET');
   check(g.code === 200 && g.json.ok && g.json.settings.roster.maxTasks === 200, 'GET 返回当前设置', JSON.stringify(g.code));
-  check(Array.isArray(g.json.schema) && g.json.schema.length === 6, 'GET 同时返回 schema（UI 不必自己写死表单）');
+  check(Array.isArray(g.json.schema) && g.json.schema.length === 5, 'GET 同时返回 schema（UI 不必自己写死表单）');
   check(g.json.path === settingsFile, 'GET 如实告知设置文件路径（可审计）');
 
   const p = await call('POST', { roster: { maxTasks: 12 } });
