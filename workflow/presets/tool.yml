@@ -1,0 +1,8 @@
+# 小工具 / 脚本：可整段跳过发现；PRD 走轻量维度。
+id: tool
+extends: base
+name: 小工具 / 脚本
+
+phases:
+  discovery:
+    enabledByDefault: false

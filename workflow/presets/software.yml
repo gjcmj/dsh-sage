@@ -1,0 +1,8 @@
+# 通用软件项目：发现多一条「技术与形态」，其余同 base。
+id: software
+extends: base
+name: 通用软件项目
+
+phases:
+  discovery:
+    routes: [internal, users, tech-form]

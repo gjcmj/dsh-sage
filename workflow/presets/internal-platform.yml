@@ -1,0 +1,13 @@
+# 内部管理平台（合规类）：政策调研 + 技术方案默认开；原型仍默认关。
+id: internal-platform
+extends: base
+name: 内部管理平台（合规类）
+
+phases:
+  discovery:
+    routes: [internal, users, policy]
+  tech-plan:
+    enabledByDefault: true
+
+checks:
+  prd: [data-and-permissions, compliance-if-applicable]
