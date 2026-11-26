@@ -47,7 +47,7 @@ console.log('① 表单由 host 的 schema 生成（不另写一份默认值/值
   const schema = settingsSchema();
   const defaults = { identity: { profile: 'developer', askBudget: 5 }, roster: { maxTasks: 200, defaultRoles: null } };
   const model = settingsFormModel(schema, defaults);
-  check(model.length === schema.length && model.length === 5, '五个分组都渲染（含 2026-09-17 新增的「记忆」组）', `${model.length} 组`);
+  check(model.length === schema.length && model.length === 6, '六个分组都渲染（含 2026-11-26 新增的「工作流」组）', `${model.length} 组`);
   check(model.every((g) => g.rows.length > 0), '每组都有行', model.map((g) => `${g.group}:${g.rows.length}`).join(' '));
   const all = model.flatMap((g) => g.rows);
   check(all.length === Object.keys(settingsSchema().flatMap((g) => g.items)).length, '行数 = spec 项数（不重不漏）', String(all.length));
