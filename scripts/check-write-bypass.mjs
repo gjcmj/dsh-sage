@@ -26,7 +26,7 @@ import { fileURLToPath } from 'node:url';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = join(HERE, '..');
 const BASELINE_FILE = process.env.DSH_WRITE_BYPASS_BASELINE
-  || join(PKG_ROOT, 'regression.fixtures', 'write-bypass-baseline.json');
+  || join(PKG_ROOT, 'tests', 'regression.fixtures', 'write-bypass-baseline.json');
 
 /** 统计范围：真正会写工件的模块（排除测试与脚本自身）。 */
 const TARGETS = ['lib', 'client.js'];

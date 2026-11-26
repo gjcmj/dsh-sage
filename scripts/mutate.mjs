@@ -29,7 +29,7 @@ import { promisify } from 'node:util';
 const run = promisify(execFile);
 const HERE = dirname(fileURLToPath(import.meta.url));
 const PKG_ROOT = join(HERE, '..');
-const CATALOG = join(PKG_ROOT, 'regression.fixtures', 'mutations.json');
+const CATALOG = join(PKG_ROOT, 'tests', 'regression.fixtures', 'mutations.json');
 
 const SKIP = new Set(['node_modules', '.git', '.tmp-mut', '.tmp-mA', '.tmp-mB', '.tmp-sync-fixture', 'browser-screenshots']);
 

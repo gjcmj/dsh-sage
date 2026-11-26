@@ -101,7 +101,7 @@ const DRIFT_TOLERANCE = 5; // 行号容差：±5 行内视为"命中且未漂移
  */
 const BASELINE_FILE =
   process.env.DSH_EVIDENCE_FRAGMENT_BASELINE ||
-  join(PKG_ROOT, 'regression.fixtures', 'evidence-fragment-baseline.json');
+  join(PKG_ROOT, 'tests', 'regression.fixtures', 'evidence-fragment-baseline.json');
 
 /** 读基线：缺失/损坏/缺 key ⇒ 该 key 按 0（fail-closed）。 */
 function loadBaseline() {
