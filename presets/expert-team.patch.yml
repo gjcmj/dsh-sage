@@ -1,4 +1,4 @@
-# @yangdcm/dsh-expert-team agent presets (dsh >= 0.2.2).
+# dsh-expert-sage agent presets (dsh >= 0.2.2).
 #
 # WHY this is a bundle patch and not a `.agent-presets/<id>/` directory: dsh 0.2.x
 # removed directory discovery. Presets are declarations now — a row naming

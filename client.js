@@ -1,4 +1,4 @@
-// @yangdcm/dsh-expert-team — client half: a live team overlay panel + header button.
+// dsh-expert-sage — client half: a live team overlay panel + header button.
 //
 // Mirrors dsh-md-preview's proven wiring: a header button in
 // `conversation.session.header.actions` captures the session id into a module
@@ -9,7 +9,7 @@
 // Follows --dsw-alias-* theme vars.
 
 window.__ModuleLoader__.load({
-  id: '@yangdcm/dsh-expert-team',
+  id: 'dsh-expert-sage',
   factory: function (require) {
     var module = { exports: {} }
     var exports = module.exports
@@ -4842,7 +4842,7 @@ window.__ModuleLoader__.load({
             name: 'settings.section',
             id: 'expert-team',
             order: 50,
-            label: function () { return t('专家团', 'Expert team') }
+            label: function () { return t('Sage', 'Sage') }
           }, wrap(SettingsSection))
         })
 
@@ -4872,7 +4872,7 @@ window.__ModuleLoader__.load({
             name: 'conversation.view',
             id: 'expert-team',
             order: 20,
-            label: function () { return '🧑‍🔬 ' + t('专家团', 'Team') },
+            label: function () { return '🧑‍🔬 ' + t('Sage', 'Sage') },
             inject: function (sessionId) { return { sessionId: sessionId, mode: 'view' } }
           }, wrap(Panel))
         })

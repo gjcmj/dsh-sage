@@ -1560,7 +1560,7 @@
       "edits": [
         {
           "file": "client.js",
-          "find": "        ctx.slots.inject('settings.section', function () {\n          return ctx.slots.register({\n            name: 'settings.section',\n            id: 'expert-team',\n            order: 50,\n            label: function () { return t('专家团', 'Expert team') }\n          }, wrap(SettingsSection))\n        })",
+          "find": "        ctx.slots.inject('settings.section', function () {\n          return ctx.slots.register({\n            name: 'settings.section',\n            id: 'expert-team',\n            order: 50,\n            label: function () { return t('Sage', 'Sage') }\n          }, wrap(SettingsSection))\n        })",
           "replace": "        // MUTANT: 分节注册被删（组件与路由都在，用户在设置菜单里看不到这一页）"
         }
       ]

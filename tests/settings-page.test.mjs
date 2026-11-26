@@ -83,7 +83,7 @@ console.log('\n③ 设置页真的接进了官方设置菜单（注册了但没�
 {
   check(/ctx\.slots\.inject\('settings\.section'/.test(src), '注册进官方 `settings.section` 槽（宿主 ui-settings-general 声明）');
   check(/name: 'settings\.section',[\s\S]{0,120}?id: 'expert-team'/.test(src), '分节 id 稳定（`expert-team`）');
-  check(/order: 50/.test(src) && /label: function \(\) \{ return t\('专家团', 'Expert team'\) \}/.test(src), '带上 nav 位置与随语言变化的标签');
+  check(/order: 50/.test(src) && /label: function \(\) \{ return t\('Sage', 'Sage'\) \}/.test(src), '带上 nav 位置与随语言变化的标签');
   check(/function SettingsSection\(\)/.test(src), '`SettingsSection` 组件已定义');
   check(/wrap\(SettingsSection\)/.test(src), '分节用 `wrap()` 挂载（渲染出错不会炸掉整个设置面板）');
   check(!/TAB_ZH = \{[^}]*settings/.test(src), '浮层「设」页签已移除（不再两处渲染同一份表单）');

@@ -1,4 +1,4 @@
-// End-to-end scenario test for @yangdcm/dsh-expert-team (host/data layer).
+// End-to-end scenario test for dsh-expert-sage (host/data layer).
 // Simulates a real team run THROUGH the actual command handlers + web routes:
 //   create → design → 方案确认门(decide) → implement → review(非pass→repair链)
 //   → test → /team check gates → deliver-complete → state route final snapshot.

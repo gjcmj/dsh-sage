@@ -4,7 +4,7 @@
 // 为什么存在：本包的资产会被**自举安装**到多处运行时位置：
 //   ① 源：      packages/dsh-expert-team/
 //   ② 已装 skill： $DSH_HOME/skills/expert-team/
-//   ③ profile 运行副本： $DSH_HOME/profiles/web/node_modules/@yangdcm/dsh-expert-team/
+//   ③ profile 运行副本： $DSH_HOME/profiles/web/node_modules/dsh-expert-sage/
 //   ④ （0.2.x 起 preset 不再铺盘：它由包内 bundle 补丁注册，见 presets/expert-team.patch.yml）
 //
 // 而 ensureSkillInstalled() / ensurePresetInstalled() 一旦发现目标存在就**直接 return**

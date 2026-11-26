@@ -49,7 +49,7 @@ console.log('① 机制约束：cordis.patch.yml 不得 insert 任何 `dsh-tool-
   const toolRows = nameLines.filter((n) => /dsh-tool-/.test(n));
   check(toolRows.length === 0, '没有任何 `dsh-tool-*` 行（架构评审的硬约束）', toolRows.join(' , '));
   // 本包自己的行只应是 host 平面的 command + client-discovery 标记
-  const allowed = nameLines.filter((n) => /^@yangdcm\/dsh-expert-team(\/command)?$/.test(n));
+  const allowed = nameLines.filter((n) => /^dsh-expert-sage(\/command)?$/.test(n));
   check(allowed.length === nameLines.length, '本 bundle 只贡献 host-plane 行（command + client 标记）', nameLines.join(' , '));
 }
 

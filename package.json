@@ -1,7 +1,7 @@
 {
-  "name": "@yangdcm/dsh-expert-team",
-  "version": "1.8.0",
-  "description": "dsh「专家团」bundle：一句自然语言组建角色化多智能体「数字员工」团队，按九阶段门控流水线协作交付，实现者直接改代码并产出持久工件；带 live 团队浮层。 · Role-based multi-agent expert team for DeepSeek Harness: one sentence in, a staged and gated team delivery out.",
+  "name": "dsh-expert-sage",
+  "version": "1.9.0",
+  "description": "Sage（dsh-expert-sage）：在专家团 12 角色 / 9 阶段交付引擎之上，加上新项目前置工作流 —— kickoff → 发现（可裁剪）→ 多维 PRD（草案/人签定稿）→ 可选原型/技术方案 → 开发。 · Sage wraps the expert-team delivery engine with a configurable front workflow: kickoff -> discovery -> a multi-dimensional PRD (draft, then human-signed final) -> optional prototype/tech plan -> delivery.",
   "type": "module",
   "license": "MIT",
   "keywords": [
@@ -20,15 +20,19 @@
     "role-based",
     "spec-driven",
     "dag",
-    "agentic-workflow"
+    "agentic-workflow",
+    "kickoff",
+    "discovery",
+    "prd",
+    "product-workflow"
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/yangdcm/dsh-expert-team.git"
+    "url": "git+https://github.com/gjcmj/dsh-sage.git"
   },
-  "homepage": "https://github.com/yangdcm/dsh-expert-team#readme",
+  "homepage": "https://github.com/gjcmj/dsh-sage#readme",
   "bugs": {
-    "url": "https://github.com/yangdcm/dsh-expert-team/issues"
+    "url": "https://github.com/gjcmj/dsh-sage/issues"
   },
   "engines": {
     "node": ">=24.9.0",

@@ -1,4 +1,4 @@
-// Full regression harness for @yangdcm/dsh-expert-team's /team host (dsh plugin).
+// Full regression harness for dsh-expert-sage's /team host (dsh plugin).
 // Covers: create, status (progress), index, migrate, profile, canvas --watch,
 // and the 5 web routes (state / artifact / decide) via a fake webServer ctx.
 // Run: node regression.test.mjs   (workspace-only; touches no ~/.dsh state).

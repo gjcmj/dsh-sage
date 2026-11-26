@@ -7,6 +7,17 @@
 
 （暂无）
 
+## 1.9.0
+
+**主题：产品身份独立 —— 从「专家团 fork」变成 Sage（dsh-expert-sage）**。
+
+### 变更
+
+- **包名与身份**：`@yangdcm/dsh-expert-team` → `dsh-expert-sage`；仓库/主页/问题链接指向 `gjcmj/dsh-sage`；`cordis.patch.yml` 与客户端内核按新包名注册。
+- **README 重写**：Sage 定位放在首屏（新项目工作流 + 专家团引擎），不再以团队说明为主体；中英双份。
+- **显示名**：设置页与画布标签改为 `Sage`（内部 settings 命名空间、路由、`$DSH_HOME/expert-team`、skills 目录保持不变，旧设置与旧技能继续可用）。
+- **llms.txt / hero**：包名、仓库、安装命令、定位同步更新。
+- 引擎、模板、设置项、测试数量（99）均不变。
 ## 1.8.0
 
 **主题：新项目前置工作流（kickoff → 发现 → PRD）—— 模板化、可配置、默认不绑架**。

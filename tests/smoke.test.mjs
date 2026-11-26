@@ -1,4 +1,4 @@
-// Smoke test for @yangdcm/dsh-expert-team's /team command plugin (in-workspace, no ~/.dsh touched).
+// Smoke test for dsh-expert-sage's /team command plugin (in-workspace, no ~/.dsh touched).
 import { mkdtemp, readFile, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
