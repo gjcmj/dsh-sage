@@ -66,7 +66,7 @@ console.log('① 表单由 host 的 schema 生成（不另写一份默认值/值
   check(!!mb && !!mb.labels && mb.labels.off && mb.labels.midas, '三个值都带中文标签（下拉里不裸露英文标识）', mb ? JSON.stringify(mb.labels) : '');
   check(all.every((r) => r.label), '每行都带中文标签（UI 直接显示 spec 的 label）');
   const prof = all.find((r) => r.path === 'identity.profile');
-  check(prof.type === 'enum' && prof.values.join(',') === 'developer,non-technical,mixed', 'enum 的候选值来自 spec', JSON.stringify(prof.values));
+  check(prof.type === 'enum' && prof.values.join(',') === 'developer,fullstack,non-technical,mixed', 'enum 的候选值来自 spec', JSON.stringify(prof.values));
   check(prof.value === 'developer', '控件初值取当前设置');
   const budget = all.find((r) => r.path === 'identity.askBudget');
   check(budget.value === 5 && budget.min === 0 && budget.max === 20, 'int 带上下界（输入框直接约束）');

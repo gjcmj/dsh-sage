@@ -72,8 +72,8 @@ console.log('① schema 由 SETTINGS_SPEC 生成（单一真源），并刻意�
   // 1.3.3：枚举成员带上中文描述（值本身仍是标识 —— 值域不变），让别的 UI 也能显示中文
   {
     const of = schema.shape.identity.shape.profile.of;
-    check(of.map((c) => c.value).join(',') === 'developer,non-technical,mixed', '枚举**值域不变**（描述只是 meta，不改类型/取值）', of.map((c) => c.value).join(','));
-    check(of.map((c) => c.desc).join('/') === '技术开发者/无技术经验/混合', '每个枚举成员挂上了中文描述', JSON.stringify(of.map((c) => c.desc)));
+    check(of.map((c) => c.value).join(',') === 'developer,fullstack,non-technical,mixed', '枚举**值域随 spec**（描述只是 meta，不改类型）', of.map((c) => c.value).join(','));
+    check(of.map((c) => c.desc).join('/') === '技术开发者/全栈 / 资深/无技术经验/混合（懂产品，不专实现）', '每个枚举成员挂上了中文描述', JSON.stringify(of.map((c) => c.desc)));
     const tg = schema.shape.gates.shape.tierGate.of;
     check(tg.map((c) => c.desc).join('/') === '软门（建议先生效）/硬门（不选不开工）', '第二个枚举项（档位门）同样带描述', JSON.stringify(tg.map((c) => c.desc)));
   }

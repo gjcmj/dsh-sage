@@ -29,13 +29,15 @@ const check = (ok, name, detail) => {
 
 console.log('# F 线 · 身份策略\n');
 
-console.log('① 三种身份的口径**确实不同**（不是同一模板换标题）');
+console.log('① 四种身份的口径**确实不同**（不是同一模板换标题）');
 {
   const dev = compilePolicy(defaultSettings());
   const nt = compilePolicy({ identity: { profile: 'non-technical', askBudget: 3 } });
+  const fs = compilePolicy({ identity: { profile: 'fullstack' } });
   const mx = compilePolicy({ identity: { profile: 'mixed' } });
-  check(dev.profile === 'developer' && nt.profile === 'non-technical' && mx.profile === 'mixed', '三种 profile 各自解析');
-  check(dev.label === '技术开发者' && nt.label === '无技术经验' && mx.label === '混合', '中文标签来自真源', `${dev.label}/${nt.label}/${mx.label}`);
+  check(dev.profile === 'developer' && nt.profile === 'non-technical' && fs.profile === 'fullstack' && mx.profile === 'mixed', '四种 profile 各自解析');
+  check(dev.label === '技术开发者' && nt.label === '无技术经验' && fs.label === '全栈 / 资深' && mx.label === '混合（懂产品，不专实现）', '中文标签来自真源', `${dev.label}/${nt.label}/${fs.label}/${mx.label}`);
+  check(/术语直给/.test(fs.ask) && /不代决/.test(fs.decide), '**全栈 / 资深**：术语直给 + 不代决（没回应才按保守默认）', fs.ask.slice(0, 30));
   check(/禁止术语/.test(nt.ask) && /人话版/.test(nt.ask), '**无技术经验**：禁止术语 + 必须给一句话人话版', nt.ask.slice(0, 40));
   check(/代你拍板/.test(nt.decide) && /必须问你/.test(nt.decide), '**无技术经验**：技术决策代拍、产品/范围决策必须问', nt.decide.slice(0, 36));
   check(/不代你决策/.test(dev.decide), '**技术开发者**：不代决（只给选项与权衡）');
@@ -66,7 +68,7 @@ console.log('\n③ 口径块抽取（启动消息只注入块，不塞整篇文�
   check(block.startsWith(POLICY_BLOCK_START) && block.endsWith(POLICY_BLOCK_END), '抽出的是带标记的块');
   check(block.length < p.md.length, '块比整篇短（启动消息不被文档塞满）', `${block.length} < ${p.md.length}`);
   check(policyBlockFrom('# 没有标记的文档\n') === '' && policyBlockFrom('') === '' && policyBlockFrom(null) === '', '无标记/空 ⇒ 空串（旧 run 行为与从前一致）');
-  check(Object.keys(POLICY_PROFILES).length === 3, '三种身份定义在真源里', Object.keys(POLICY_PROFILES).join(','));
+  check(Object.keys(POLICY_PROFILES).length === 4, '四种身份定义在真源里', Object.keys(POLICY_PROFILES).join(','));
 }
 
 console.log('\n④ 端到端：建 run 冻结 POLICY.md + 启动消息开头就是口径块');
@@ -96,4 +98,4 @@ check(/【专家团任务】目标：做个小工具/.test(msg), '原来的任�
 check(/身份策略已冻结/.test(String(res.text)), '建 run 回执如实告知策略已冻结', String(res.text).slice(0, 30));
 
 if (fail) { console.error(`\n✗ policy：${fail} 项失败`); process.exit(1); }
-console.log('\n✓ policy：全部通过（三种口径 / 授权留痕 / 块抽取 / 端到端冻结）');
+console.log('\n✓ policy：全部通过（四种口径 / 授权留痕 / 块抽取 / 端到端冻结）');
