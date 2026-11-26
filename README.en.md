@@ -78,7 +78,7 @@ Run artifacts live in `<workspace>/team/<run-id>/`; front-stage artifacts live i
 
 ## Quality
 
-- **97 test files** (`npm run test:all`, zero dependencies, no install needed) plus a **164-entry mutation catalog**;
+- **97 test files** (`npm run test:all`, zero dependencies, no install needed) plus a **162-entry mutation catalog**;
 - Gates check structure; quality is signed off by a human. Coverage is never rendered as "quality passed".
 
 ## Upstream

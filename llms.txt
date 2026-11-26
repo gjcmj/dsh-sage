@@ -22,7 +22,7 @@
 - 落盘位置：工件在 `<你的工作区>/team/<run-id>/`；本机偏好与跨项目经验在 `$DSH_HOME/expert-team/`
 - 推荐插件：Mnemon（本地记忆空间/文档）— 不装也能跑完整个流程；本插件不接管记忆后端
 - 可选插件：`dsh-cost-meter`（会话费用视图）
-- 测试：97 个测试文件（`npm run test:all`，零依赖、无需 `install`），含 164 条变异目录与多组棘轮（ratchet）测试（变异目录在 CI 里只校验形状；变异体需手动注入验证）
+- 测试：97 个测试文件（`npm run test:all`，零依赖、无需 `install`），含 162 条变异目录与多组棘轮（ratchet）测试（变异目录在 CI 里只校验形状；变异体需手动注入验证）
 - 写侧门禁：`write`/`edit` 通道有工件归属硬门禁（`tools/pre-execute`；创建放行、覆写他人工件当场拒绝；持 `bash` 的角色仍可能绕过）
 - 前置工作流：`kickoff`（章程草案/定稿 + 方案版 AGENTS）→ `discovery`（路线可裁剪，无竞品不强制）→ `prd`（一个文件两种状态，人签定稿）；定稿后才允许可选的原型 / 技术方案。
 - 工作流模板：`workflow/base.yml` + 预设 `software` / `internal-platform` / `tool`；未知阶段 / 路线 / skill 报错并列合法值；项目启动钉住模板版本
@@ -30,7 +30,7 @@
 - 工作流设置：现有设置页的「工作流」分组（8 项：预设 / 原型 / 技术方案 / 发现路线 / 严格模式 / 两种可选 run；模板在只有 base 时隐藏）；可选阶段留空 = 按预设；发现阶段由预设决定（tool 预设才跳过），不在设置里重复开关
 - 项目级门禁默认只提示不拦截；严格模式（设置里开）才在 PRD 未定稿时拒绝建 run / 写 `src/`
 - 设置页：官方设置菜单的「Sage」（宿主命名空间 expert-team，改动即时生效，随插件市场备份/恢复）。所有设置项都不需要重启（插件不再修改 dsh profile）
-- 会改宿主 GUI 的**一处展示顺序**（默认开，可关）：装上后**子代理列表按最新在上**显示。只改展示顺序——插件遮蔽宿主把目录送到浏览器的那一个 remote 方法（`subagents/list` → `remoteExportList`）并反转数组；服务端 `listChildren` 的契约（按 createdAt 升序）**原样不动**，模型侧 `list_agents` 与本插件 `/state` 不受影响。设置项 `display.subagentListNewestFirst` 可关；宿主结构不匹配时**自动退回宿主默认顺序**并在设置页如实显示「未生效」
+- 不再改宿主 GUI 的展示顺序：1.9.2 起删除「子代理列表最新在上」设置与状态块（宿主 0.2.2-rc.5 已移除该 remote 接口，投影顺序不可插改）；子代理列表按宿主默认顺序显示
 - 故障排查：角色子代理报 `does not support reasoning effort` ⇒ 会话路由的模型需在 `~/.dsh/settings.yaml` 的 `agent-default-model` 条目声明 `reasoningEfforts`（`off/low/high/max`）；插件加载时会预检并告警一行（只告警、不阻断）
 - 记忆：由宿主级插件提供（如 dsh-mnemon 的本地记忆空间/文档）。本插件只做只读检测（设置页一行「记忆来源」），不写 profile、不切换后端、不产生任何 token 记忆后端
 - 关键词：dsh 插件 · DeepSeek Harness · 多智能体 · multi-agent · agent team · orchestration · 角色化 subagent · 依赖 DAG 并行 · 阶段门控 · 质量门禁 · 工件留痕 · role-based subagents

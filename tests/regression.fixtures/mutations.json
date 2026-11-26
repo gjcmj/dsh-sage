@@ -1840,32 +1840,6 @@
       ]
     },
     {
-      "id": "M141-subagent-order-no-reverse",
-      "title": "子代理列表「最新在上」退化成原样返回（遮蔽还在，顺序没变）",
-      "why": "2026-09-16 新增（1.3.25 新能力的防回归登记）。这个能力的**全部作用**就是反转浏览器拿到的 catalog：一旦 reverse 被去掉（例如有人「顺手简化」成直接返回），方法仍会被遮蔽、状态路由仍报 effective:true、界面也不会报错 —— 用户只会觉得「怎么还是最旧在上」，而这种「装了却没生效」正是本仓最忌的静默退化。 预期红：`反转 entries`、`包装后反转、且保留其它字段`、`读取方拿到的是**反转后**的结果`（该测试共 6 项红）。 本变异体已实测：基线绿 → 变异红 → **逐字节还原后 sha256 一致** → 再跑绿。",
-      "test": "host-settings.test.mjs",
-      "edits": [
-        {
-          "file": "lib/subagent-order.js",
-          "find": "  return { catalog: { ...catalog, entries: entries.slice().reverse() }, changed: true };",
-          "replace": "  return { catalog: { ...catalog, entries: entries }, changed: true };"
-        }
-      ]
-    },
-    {
-      "id": "M142-subagent-order-forwards-this",
-      "title": "包装函数改为转发调用方的 this（网关下必然在错误的 this 上执行）",
-      "why": "2026-09-16 新增。网关是 Reflect.apply(method, receiver, args)，而 receiver 是 traceable 代理（apply trap 会换 thisArg）⇒ 包装函数必须始终以**捕获的裸实例**为 this。改回转发外来 this 后，真机表现是「顺序有时对有时错」、外观与正确版本一模一样，属最难查的一类。注意不对称：变异下**代理形态**那条断言仍通过（代理的 shadow method 本就以裸实例调用），真正有牙的是**直接调用**的两条 —— 若有人只留代理那条，护栏就是摆设。 预期红：`不依赖 this：原方法始终以捕获到的 target 被调用`、`外来的 this 没有被转发给原方法`（共 2 项）。⚠️ 不对称：变异下**代理形态**那条仍通过（代理的 shadow method 本就以裸实例调用）—— 真正的牙齿是这两条**直接调用**断言，只留代理那条等于没有护栏。 本变异体已实测：基线绿 → 变异红 → **逐字节还原后 sha256 一致** → 再跑绿。",
-      "test": "host-settings.test.mjs",
-      "edits": [
-        {
-          "file": "lib/subagent-order.js",
-          "find": "    const catalog = await Reflect.apply(original, receiver, args);",
-          "replace": "    const catalog = await Reflect.apply(original, this, args);"
-        }
-      ]
-    },
-    {
       "id": "M147-roles-warm-deadline-at-kick",
       "title": "角色后台批的期限挪回 kick 时刻计算（1.3.22 那个按构造必然的零读回归）",
       "why": "2026-09-16 新增。1.3.22 的真回归：期限在 **kick 那一刻**按绝对时刻算好，而这一批要延迟 ~1000 ms 才开跑 ⇒ 开跑时期限已过期 ⇒ resolveSubRoles 在**第一次读之前**就 cut=deadline break ⇒ 一条都不读，而调用方照旧挂 warming:['roles']，界面显示「更新中」却永远不动。本条变异让批沿用调用方传进来的 kick 时刻绝对期限，正是那次事故的形状。 预期红：`① 延迟(150 ms) > 期限(60 ms) 时仍**必须读完这一条**`（实测 reads=0）、`① 队列真的前进了`（deferred=1）、`① 有进展 ⇒ 零进展标记不点亮`（共 4 项）。 本变异体已实测：基线绿 → 变异红 → **逐字节还原后 sha256 一致** → 再跑绿。",

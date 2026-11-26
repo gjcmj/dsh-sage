@@ -80,7 +80,7 @@ dsh plugin --profile <profile> add link:/path/to/dsh-sage
 
 ## 质量
 
-- **97 个测试文件**（`npm run test:all`，零依赖、无需 `install`），含 **164 条变异目录**与多组棘轮；
+- **97 个测试文件**（`npm run test:all`，零依赖、无需 `install`），含 **162 条变异目录**与多组棘轮；
 - 门禁原则：结构问题机器查、质量问题人签；不把「覆盖」渲染成「质量通过」。
 
 ## 与 upstream 的关系

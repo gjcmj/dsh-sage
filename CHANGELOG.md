@@ -7,6 +7,15 @@
 
 （暂无）
 
+## 1.9.2
+
+**主题：删除失效的「子代理列表顺序」覆盖 —— 宿主接口已变，插件不再假装能改**。
+
+### 变更
+
+- **移除** `display.subagentListNewestFirst` 设置项、设置页状态块、`/subagent-order` 路由与 `lib/subagent-order.js`。
+- **原因**：DSH 0.2.2-rc.5 移除了 `subagents` 的 `remoteExportList`；子代理列表改为 `subagentCatalog` 会话投影，注册表同 key 只共享已有单元、无公开替换接口 ⇒ 插件侧不可插改。
+- 设置项 26 项 / 5 组；路由 14 条；测试仍 97；变异目录 164 → 162（删除指向已移除模块的两条）。
 ## 1.9.1
 
 **主题：删掉记忆后端配置 —— 记忆交给宿主插件（Mnemon），本插件不再写 profile、不再产生 token 记忆后端**。

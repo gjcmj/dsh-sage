@@ -31,7 +31,7 @@ console.log('① spec 与默认值（UI 表单结构也由它生成 ⇒ 新增�
   const d = defaultSettings();
   check(SETTINGS_GROUPS.join(',') === 'identity,roster,display,gates,workflow', '五组：身份 / 编制 / 显示 / 门禁 / 工作流', SETTINGS_GROUPS.join(','));
   check(BASIC_SETTING_PATHS.length === 4 && BASIC_SETTING_PATHS.every((p) => !!flatSpec()[p]), '基础视图 4 项都存在 spec 里', BASIC_SETTING_PATHS.join(','));
-check(Object.keys(flatSpec()).length === 27, '共 27 个设置项（4+5+5+5+8；记忆组已删除），', String(Object.keys(flatSpec()).length));
+check(Object.keys(flatSpec()).length === 26, '共 26 个设置项（4+5+4+5+8；记忆组与子代理顺序已删除），', String(Object.keys(flatSpec()).length));
   check(d.roster.maxTasks === 200 && d.gates.tierGate === 'soft' && d.identity.profile === 'developer', '默认值符合既有行为（maxTasks=200 / 档位门 soft / 身份 developer）');
   const schema = settingsSchema();
   check(schema.length === 5 && schema.every((g) => g.label && g.hint && g.items.length), 'schema 每组都有中文标签与说明', schema.map((g) => `${g.group}:${g.items.length}`).join(' '));
