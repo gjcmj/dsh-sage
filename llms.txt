@@ -28,7 +28,7 @@
 - 前置工作流：`kickoff`（章程草案/定稿 + 方案版 AGENTS）→ `discovery`（路线可裁剪，无竞品不强制）→ `prd`（一个文件两种状态，人签定稿）；定稿后才允许可选的原型 / 技术方案。
 - 工作流模板：`workflow/base.yml` + 预设 `software` / `internal-platform` / `tool`；未知阶段 / 路线 / skill 报错并列合法值；项目启动钉住模板版本
 - 工作流 skills：`kickoff` · `discovery` · `prd` · `prototype` · `tech-plan`（均可脱离插件独立使用）
-- 工作流设置：现有「专家团」设置页的「工作流」分组（模板 / 预设 / 阶段开关 / 发现路线 / 严格模式 / run 种类）；阶段开关留空 = 按预设
+- 工作流设置：现有设置页的「工作流」分组（8 项：预设 / 原型 / 技术方案 / 发现路线 / 严格模式 / 两种可选 run；模板在只有 base 时隐藏）；可选阶段留空 = 按预设；发现阶段由预设决定（tool 预设才跳过），不在设置里重复开关
 - 项目级门禁默认只提示不拦截；严格模式（设置里开）才在 PRD 未定稿时拒绝建 run / 写 `src/`
 - 设置页：官方 `设置 →「Sage」`（宿主命名空间 `expert-team`，改动即时生效，随插件市场备份/恢复）。**唯一例外**是「记忆 → 记忆后端」：它要把 dsh profile 的补丁文件（`$DSH_HOME/profiles/<profile>/cordis.patch.yml`）改成一致，而 profile 是**加载时**读的 ⇒ **需重启 `dsh web`**（设置页会把这条重启要求显示出来）
 - 会改宿主 GUI 的**一处展示顺序**（默认开，可关）：装上后**子代理列表按最新在上**显示。只改展示顺序——插件遮蔽宿主把目录送到浏览器的那一个 remote 方法（`subagents/list` → `remoteExportList`）并反转数组；服务端 `listChildren` 的契约（按 createdAt 升序）**原样不动**，模型侧 `list_agents` 与本插件 `/state` 不受影响。设置项 `display.subagentListNewestFirst` 可关；宿主结构不匹配时**自动退回宿主默认顺序**并在设置页如实显示「未生效」

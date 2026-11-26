@@ -50,12 +50,12 @@ console.log('① 表单由 host 的 schema 生成（不另写一份默认值/值
   check(model.length === schema.length && model.length === 6, '六个分组都渲染（含 2026-11-26 新增的「工作流」组）', `${model.length} 组`);
   check(model.every((g) => g.rows.length > 0), '每组都有行', model.map((g) => `${g.group}:${g.rows.length}`).join(' '));
   const allRows = model.flatMap((g) => g.rows);
-  check(allRows.filter((r) => r.tier === 'basic').length === 6, '基础视图恰好 6 项（其余进高级折叠）', allRows.filter((r) => r.tier === 'basic').map((r) => r.path).join(','));
+  check(allRows.filter((r) => r.tier === 'basic').length === 5, '基础视图恰好 5 项（其余进高级折叠）', allRows.filter((r) => r.tier === 'basic').map((r) => r.path).join(','));
   check(allRows.filter((r) => r.tier === 'advanced').length >= 20, '高级项存在且默认折叠', String(allRows.filter((r) => r.tier === 'advanced').length));
   const tpl = allRows.find((r) => r.path === 'workflow.template');
   check(tpl && tpl.hidden === true, '只有一个取值的「模板」被隐藏', JSON.stringify(tpl && { tier: tpl.tier, hidden: tpl.hidden }));
-  check(allRows.find((r) => r.path === 'workflow.discovery').nullable === true, '可空开关透传到表单（三态控件）');
-  check(src.includes("r.type === 'bool' && r.nullable") && src.includes('按预设'), '可空开关渲染为三态（按预设 / 开启 / 关闭）');
+  check(!allRows.some((r) => r.path === 'workflow.discovery'), '发现阶段不再有全局开关（由预设决定）');
+  check(src.includes("r.type === 'bool' && r.nullable") && src.includes('按预设'), '可空开关（如有）渲染为三态');
   check(src.includes('exp-settings-state'), '每行有状态徽标（开着/关着一眼可见）');
   const all = model.flatMap((g) => g.rows);
   check(all.length === Object.keys(settingsSchema().flatMap((g) => g.items)).length, '行数 = spec 项数（不重不漏）', String(all.length));

@@ -23,37 +23,36 @@ console.log("# 工作流设置\n");
 console.log("① spec 单源");
 check(SETTINGS_GROUPS.includes("workflow"), "workflow 组存在");
 const items = Object.keys(SETTINGS_SPEC.workflow.items);
-check(items.length === 9, "9 个设置项", items.join("、"));
+check(items.length === 8, "8 个设置项（发现阶段已由预设决定，不再是全局开关）", items.join("、"));
 check(items.every((k) => SETTINGS_SPEC.workflow.items[k].label && SETTINGS_SPEC.workflow.items[k].hint), "每项都有中文标签与说明");
 const d = defaultSettings().workflow;
 check(d.template === "base" && d.preset === "software", "默认模板/预设（通用软件）");
-check(d.discovery === null && d.prototype === null && d.techPlan === null, "阶段开关默认 null（= 按预设）", JSON.stringify(d));
+check(!("discovery" in d) && d.prototype === null && d.techPlan === null, "可选阶段开关默认 null（= 按预设），发现不在设置里", JSON.stringify(d));
 check(d.strict === false && d.runKindPrototype === false && d.runKindPlan === false, "严格模式与 run 种类默认关");
 const schema = settingsSchema().find((g) => g.group === "workflow");
-check(schema && schema.items.length === 9, "schema 透出 9 项");
-check(schema.items.find((i) => i.key === "discovery").nullable === true, "可空开关在 schema 里标明");
+check(schema && schema.items.length === 8, "schema 透出 8 项");
+check(schema.items.find((i) => i.key === "prototype").nullable === true, "可空开关在 schema 里标明");
 
 console.log("\n② 校验：非法值整体拒绝并说明");
 const bad = normalizeSettings({ workflow: { preset: "nope", prototype: "yes" } });
 check(bad.repaired.length === 2, "两项都被拒绝", JSON.stringify(bad.repaired));
 check(bad.settings.workflow.preset === "software" && bad.settings.workflow.prototype === null, "坏值回落默认（不半套生效）");
-const good = normalizeSettings({ workflow: { preset: "internal-platform", discovery: false, techPlan: true, runKindPlan: true } });
+const good = normalizeSettings({ workflow: { preset: "internal-platform", techPlan: true, runKindPlan: true } });
 check(good.repaired.length === 0 && good.settings.workflow.preset === "internal-platform", "合法值被接受");
-check(good.settings.workflow.discovery === false && good.settings.workflow.techPlan === true, "布尔开关生效");
+check(good.settings.workflow.techPlan === true && good.settings.workflow.runKindPlan === true, "布尔开关生效");
 
 console.log("\n③ 设置 → 决定的映射");
 const mapped = workflowConfigFromSettings(defaultSettings().workflow);
 check(mapped.preset === "software" && mapped.template === "base", "模板/预设映射");
 check(!("phases" in mapped), "null 开关不写进决定（留给模板默认）", JSON.stringify(mapped.phases));
-const mapped2 = workflowConfigFromSettings({ discovery: false, prototype: true, routes: ["internal"], strict: true, runKindPlan: true });
-check(mapped2.phases.discovery === false && mapped2.phases.prototype === true, "布尔开关映射");
+const mapped2 = workflowConfigFromSettings({ prototype: true, routes: ["internal"], strict: true, runKindPlan: true });
+check(mapped2.phases.prototype === true && !("discovery" in mapped2.phases), "布尔开关映射（发现不在其中）");
 check(mapped2.strict === true && mapped2.runKinds.plan === true, "严格模式 / run 种类映射");
 
 console.log("\n④ 优先级：默认 < 全局 < 项目");
-const both = resolveWorkflowConfig({ preset: "base", phases: { prototype: false } }, { global: { workflow: { preset: "software", prototype: true, discovery: false } } });
+const both = resolveWorkflowConfig({ preset: "base", phases: { prototype: false } }, { global: { workflow: { preset: "software", prototype: true } } });
 check(both.preset === "base", "项目预设覆盖全局");
 check(both.phases.prototype === false, "项目开关覆盖全局");
-check(both.phases.discovery === false, "全局开关保留（项目未写）");
 
 console.log("\n⑤ 未知路线");
 const badRoute = resolveWorkflowConfig({}, { global: { workflow: { routes: ["internal", "weird"] } } });
@@ -74,11 +73,18 @@ async function project(files) {
   return root;
 }
 
-console.log("\n⑥ 设置驱动状态：关发现 ⇒ skip");
+console.log("\n⑥ 发现阶段只由模板/预设决定（一处控制）");
 const root = await project({ "tasks/00-kickoff.md": KICK, "AGENTS.md": AG, "research/00.md": "资料" });
-const s1 = deriveWorkflowState(root, { settings: { workflow: { discovery: false } } });
-check(s1.phases.find((p) => p.id === "discovery").skipped === true, "发现阶段 skip");
-check(s1.config.routes.length > 0, "路线回落到模板默认", JSON.stringify(s1.config.routes));
+const s1 = deriveWorkflowState(root, { settings: { workflow: { preset: "software" } } });
+check(s1.phases.find((p) => p.id === "discovery").skipped === false, "software 预设：发现开启");
+check(s1.config.routes.includes("tech-form"), "路线来自预设", JSON.stringify(s1.config.routes));
+const s1tool = deriveWorkflowState(root, { settings: { workflow: { preset: "tool" } } });
+check(s1tool.phases.find((p) => p.id === "discovery").skipped === true, "tool 预设：发现整段跳过");
+const rootState = join(root, ".sage");
+await mkdir(rootState, { recursive: true });
+await writeFile(join(rootState, "state.json"), JSON.stringify({ workflow: { phases: { discovery: false } } }), "utf8");
+const s1off = deriveWorkflowState(root, { settings: { workflow: { preset: "software" } } });
+check(s1off.phases.find((p) => p.id === "discovery").skipped === true, "项目级显式覆盖仍可跳过（唯一例外）");
 
 console.log("\n⑦ 预设默认：internal-platform 开技术方案（未设置时）");
 const s2 = deriveWorkflowState(root, { settings: { workflow: { preset: "internal-platform" } } });

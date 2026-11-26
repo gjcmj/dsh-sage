@@ -66,7 +66,7 @@ Restart dsh once after installing.
 | `internal-platform` | + policy | on | off |
 | `tool` | discovery off | off | off |
 
-The default preset is **`software`**: the minimal base route plus a technology/form factor discovery route. Settings show six everyday items by default; the rest sit in a collapsed Advanced section.
+The default preset is **`software`**: the minimal base route plus a technology/form factor discovery route. Settings show five everyday items by default; the rest sit in a collapsed Advanced section. Discovery is controlled by the preset (only the tool preset skips it), so there is no second switch for it.
 
 Unknown phases, routes, artifacts or skill references fail loudly with the legal values listed, never fall back silently.
 
