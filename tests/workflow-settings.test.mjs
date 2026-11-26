@@ -26,7 +26,7 @@ const items = Object.keys(SETTINGS_SPEC.workflow.items);
 check(items.length === 9, "9 个设置项", items.join("、"));
 check(items.every((k) => SETTINGS_SPEC.workflow.items[k].label && SETTINGS_SPEC.workflow.items[k].hint), "每项都有中文标签与说明");
 const d = defaultSettings().workflow;
-check(d.template === "base" && d.preset === "base", "默认模板/预设");
+check(d.template === "base" && d.preset === "software", "默认模板/预设（通用软件）");
 check(d.discovery === null && d.prototype === null && d.techPlan === null, "阶段开关默认 null（= 按预设）", JSON.stringify(d));
 check(d.strict === false && d.runKindPrototype === false && d.runKindPlan === false, "严格模式与 run 种类默认关");
 const schema = settingsSchema().find((g) => g.group === "workflow");
@@ -36,14 +36,14 @@ check(schema.items.find((i) => i.key === "discovery").nullable === true, "可空
 console.log("\n② 校验：非法值整体拒绝并说明");
 const bad = normalizeSettings({ workflow: { preset: "nope", prototype: "yes" } });
 check(bad.repaired.length === 2, "两项都被拒绝", JSON.stringify(bad.repaired));
-check(bad.settings.workflow.preset === "base" && bad.settings.workflow.prototype === null, "坏值回落默认（不半套生效）");
+check(bad.settings.workflow.preset === "software" && bad.settings.workflow.prototype === null, "坏值回落默认（不半套生效）");
 const good = normalizeSettings({ workflow: { preset: "internal-platform", discovery: false, techPlan: true, runKindPlan: true } });
 check(good.repaired.length === 0 && good.settings.workflow.preset === "internal-platform", "合法值被接受");
 check(good.settings.workflow.discovery === false && good.settings.workflow.techPlan === true, "布尔开关生效");
 
 console.log("\n③ 设置 → 决定的映射");
 const mapped = workflowConfigFromSettings(defaultSettings().workflow);
-check(mapped.preset === "base" && mapped.template === "base", "模板/预设映射");
+check(mapped.preset === "software" && mapped.template === "base", "模板/预设映射");
 check(!("phases" in mapped), "null 开关不写进决定（留给模板默认）", JSON.stringify(mapped.phases));
 const mapped2 = workflowConfigFromSettings({ discovery: false, prototype: true, routes: ["internal"], strict: true, runKindPlan: true });
 check(mapped2.phases.discovery === false && mapped2.phases.prototype === true, "布尔开关映射");

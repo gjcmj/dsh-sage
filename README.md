@@ -68,6 +68,8 @@ dsh plugin --profile <profile> add link:/path/to/dsh-sage
 | `internal-platform` | + policy | **开** | 关 |
 | `tool` | 关闭发现 | 关 | 关 |
 
+默认预设是 **`software`（通用软件）**：在「基础」的最小路线之上多一条「技术与形态」调研；`base`（通用最小）适合不需要技术形态调研的项目。设置页默认只显示 6 项常用设置，其余收在「高级设置」折叠里。
+
 模板骨架在 `assets/project/`（章程草案 / 章程 / 方案版 AGENTS / PRD / 原型 / 技术方案）。未知阶段、未知路线、引用了不存在的 skill 或产物键，一律**报错并列出合法值**，不静默降级。
 
 ## 引擎：12 角色 / 9 阶段

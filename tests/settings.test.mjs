@@ -15,7 +15,7 @@ import { mkdtemp, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { SETTINGS_SPEC, SETTINGS_GROUPS, defaultSettings, flatSpec, getSetting, validateValue, mergeSettings, normalizeSettings, settingsSchema } from '../lib/settings.js';
+import { SETTINGS_SPEC, SETTINGS_GROUPS, BASIC_SETTING_PATHS, defaultSettings, flatSpec, getSetting, validateValue, mergeSettings, normalizeSettings, settingsSchema } from '../lib/settings.js';
 
 const here = dirname(dirname(fileURLToPath(import.meta.url)));
 let fail = 0;
@@ -30,7 +30,8 @@ console.log('① spec 与默认值（UI 表单结构也由它生成 ⇒ 新增�
 {
   const d = defaultSettings();
   check(SETTINGS_GROUPS.join(',') === 'identity,roster,display,gates,workflow,memory', '六组：身份 / 编制 / 显示 / 门禁 / 记忆', SETTINGS_GROUPS.join(','));
-  check(Object.keys(flatSpec()).length === 29, '共 29 个设置项（4+5+5+5+9+1；工作流组是 2026-11-26 新增，9 项），', String(Object.keys(flatSpec()).length));
+  check(BASIC_SETTING_PATHS.length === 6 && BASIC_SETTING_PATHS.every((p) => !!flatSpec()[p]), '基础视图 6 项都存在 spec 里', BASIC_SETTING_PATHS.join(','));
+check(Object.keys(flatSpec()).length === 29, '共 29 个设置项（4+5+5+5+9+1；工作流组是 2026-11-26 新增，9 项），', String(Object.keys(flatSpec()).length));
   check(d.roster.maxTasks === 200 && d.gates.tierGate === 'soft' && d.identity.profile === 'developer', '默认值符合既有行为（maxTasks=200 / 档位门 soft / 身份 developer）');
   const schema = settingsSchema();
   check(schema.length === 6 && schema.every((g) => g.label && g.hint && g.items.length), 'schema 每组都有中文标签与说明', schema.map((g) => `${g.group}:${g.items.length}`).join(' '));

@@ -214,6 +214,10 @@ window.__ModuleLoader__.load({
       '.exp-settings{font-size:12.5px;color:var(--dsw-alias-label-primary,var(--text,#1f2328));max-width:760px}' +
       '.exp-settings-head{margin:0 0 4px;font-size:11.5px;line-height:1.6;color:var(--dsw-alias-label-secondary,var(--text,#57606a))}' +
       '.exp-settings-group{margin:16px 0 2px;font-size:11.5px;font-weight:700;letter-spacing:.02em;color:var(--dsw-alias-label-secondary,var(--text,#57606a))}' +
+      '.exp-settings-adv{margin:6px 0 2px}' +
+      '.exp-settings-adv>summary{font-size:11.5px;color:#6b7c8f;cursor:pointer;list-style:none}' +
+      '.exp-settings-adv>summary:hover{color:#33475b}' +
+      '.exp-settings-adv .exp-settings-row{padding-left:6px;border-left:2px solid #e8eef6}' +
       '.exp-settings-row{display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-top:1px solid var(--dsw-alias-border-l1,var(--border,#eef1f5))}' +
       '.exp-settings-label{flex:0 0 188px;max-width:188px;font-size:12.5px;line-height:1.5}' +
       '.exp-settings-ctl{flex:none;display:flex;align-items:center;min-height:20px}' +
@@ -2067,7 +2071,7 @@ window.__ModuleLoader__.load({
           var cur = vals[g.group] ? vals[g.group][it.key] : undefined
           var value = typeof cur === 'undefined' ? it.default : cur
           return {
-            path: it.path, key: it.key, type: it.type, label: it.label, hint: it.hint || '',
+            path: it.path, key: it.key, type: it.type, label: it.label, hint: it.hint || '', tier: it.tier || 'basic', hidden: it.hidden === true,
             values: it.values || null, labels: it.labels || null, min: typeof it.min === 'number' ? it.min : null, max: typeof it.max === 'number' ? it.max : null,
             value: it.type === 'roles' ? (Array.isArray(value) ? value.join(', ') : '') : value,
             known: ['bool', 'int', 'enum', 'roles'].indexOf(it.type) >= 0,
@@ -2224,7 +2228,10 @@ window.__ModuleLoader__.load({
         // 一旦带标记（当前 5 条都是干净散文，属**潜伏**缺陷）就会原样显示给用户。
         // 与行说明同一套纪律：先 `plainText()` 剥标记、再 `esc()` 转义 —— 不靠"作者记得别写 markdown"兜底。
         rows.push(h('div', { key: 'h-' + g.group, className: 'exp-settings-group' }, esc(g.label) + (g.hint ? ' · ' + esc(plainText(g.hint)) : '')))
+        var basicRows = [], advRows = []
         g.rows.forEach(function (r) {
+          if (r.hidden) return
+          var bucket = r.tier === 'advanced' ? advRows : basicRows
           var ctl
           if (!r.known) {
             ctl = h('span', { style: { color: '#c0392b' } }, '未知类型 ' + esc(String(r.type)) + '（界面未跟上 spec）')
@@ -2243,7 +2250,7 @@ window.__ModuleLoader__.load({
           // 说明过长（>120 字）就让这一行换行、说明独占一行 —— 否则它会被控件列挤成一条
           // 又窄又高的文字柱（真机截图里「记忆后端」那行就是这样）。阈值取 120：spec 里现存的
           // hint 只有两条超过它，其余行（≤83 字）照旧排在控件右边，版面不受影响。
-          rows.push(h('div', { key: r.path, className: 'exp-settings-row' + (String(r.hint || '').length > 120 ? ' exp-settings-row-wide' : '') },
+          bucket.push(h('div', { key: r.path, className: 'exp-settings-row' + (String(r.hint || '').length > 120 ? ' exp-settings-row-wide' : '') },
             // ⚠️ 说明文本与 `title` 都要先过 `plainText()`（**只过 `esc()` 不够**）：面板没有 markdown
             // 渲染器，服务端来的 hint 一旦带标记就原样显示给用户 —— 真机截图里「记忆后端」那行就是
             // `三种选择**互斥**（…`，`**` 明晃晃挂在界面上（鼠标悬停的原生 title 气泡里同样带 `**`）。
@@ -2254,6 +2261,10 @@ window.__ModuleLoader__.load({
             h('span', { className: 'exp-settings-ctl' }, ctl),
             h('span', { className: 'exp-settings-note', title: plainText(r.hint) }, r.hint ? esc(plainText(r.hint)) : null)))
         })
+        basicRows.forEach(function (el) { rows.push(el) })
+        if (advRows.length) rows.push(h('details', { key: 'adv-' + g.group, className: 'exp-settings-adv' },
+          h('summary', null, t('高级设置（', 'Advanced (') + advRows.length + t(' 项，通常不用改）', ' items, usually untouched)')),
+          advRows))
       })
       return h('div', { className: 'exp-settings' },
         // 这句必须按**事实**说（2026-09-15 审核逐项查过消费者后定的口径；2026-09-17 加了一条例外）：

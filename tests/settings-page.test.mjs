@@ -49,6 +49,11 @@ console.log('① 表单由 host 的 schema 生成（不另写一份默认值/值
   const model = settingsFormModel(schema, defaults);
   check(model.length === schema.length && model.length === 6, '六个分组都渲染（含 2026-11-26 新增的「工作流」组）', `${model.length} 组`);
   check(model.every((g) => g.rows.length > 0), '每组都有行', model.map((g) => `${g.group}:${g.rows.length}`).join(' '));
+  const allRows = model.flatMap((g) => g.rows);
+  check(allRows.filter((r) => r.tier === 'basic').length === 6, '基础视图恰好 6 项（其余进高级折叠）', allRows.filter((r) => r.tier === 'basic').map((r) => r.path).join(','));
+  check(allRows.filter((r) => r.tier === 'advanced').length >= 20, '高级项存在且默认折叠', String(allRows.filter((r) => r.tier === 'advanced').length));
+  const tpl = allRows.find((r) => r.path === 'workflow.template');
+  check(tpl && tpl.hidden === true, '只有一个取值的「模板」被隐藏', JSON.stringify(tpl && { tier: tpl.tier, hidden: tpl.hidden }));
   const all = model.flatMap((g) => g.rows);
   check(all.length === Object.keys(settingsSchema().flatMap((g) => g.items)).length, '行数 = spec 项数（不重不漏）', String(all.length));
   // `memory.backend` 是**schema 驱动**的直接证据：它没在客户端手写过任何控件，靠 spec 就出现了，
