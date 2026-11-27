@@ -4060,6 +4060,9 @@ window.__ModuleLoader__.load({
           .then(function (r) { return r && r.ok ? r.json() : null })
           .then(function (d) {
             if (!d || !d.ok) return
+            // 迟到的响应不许覆盖另一个会话/工作区的数据（否则面板一开就可能把
+            // 当前项目状态替换成“别的会话 ⇒ isProject:false”，项目条与项目链一起消失）。
+            if (projectStore.sid !== (sid || '') || projectStore.cwd !== (cwd || '')) return
             projectStore.data = d
             projectStore.subs.forEach(function (fn) { try { fn(d) } catch (e) {} })
           })
@@ -4093,7 +4096,9 @@ window.__ModuleLoader__.load({
     function ProjectStrip(props) {
       ensureCss()
       var fallbackSid = useCurrentSessionId()
-      var sid = (props && props.sessionId) || fallbackSid
+      // 面板与项目条必须用**同一个**键：面板没有 sid 时优先复用项目条已解析的键，
+      // 不能各自用 useCurrentSessionId 猜（两者可能指向不同会话）。
+      var sid = (props && props.sessionId) || projectStore.sid || fallbackSid
       var p = useProjectState(sid, sid ? '' : recentSessionCwd())
       if (!p || !p.isProject) return null
       var steps = (p.steps || []).map(function (s) {
@@ -4129,7 +4134,7 @@ window.__ModuleLoader__.load({
     function ProjectDock(props) {
       ensureCss()
       var fallbackSid = useCurrentSessionId()
-      var sid = (props && props.sessionId) || fallbackSid
+      var sid = (props && props.sessionId) || projectStore.sid || fallbackSid
       var st = useProjectState(sid, sid ? '' : recentSessionCwd())
       if (!st || !st.isProject) return null
       return h('div', {
