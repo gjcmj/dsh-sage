@@ -4058,7 +4058,7 @@ window.__ModuleLoader__.load({
 
     // ── 项目链只读状态（C5b）：dock 与驾驶舱顶部条共用**同一个** 10 秒时钟。 ──
     // 为什么共用：两个组件各自 setInterval 会把同一条轻量路由拉两遍；共用后只有一个定时器、一份数据。
-    var projectStore = { data: null, sid: '', cwd: '', timer: 0, subs: new Set(), lastErr: '' }
+    var projectStore = { data: null, key: '', sid: '', cwd: '', timer: 0, subs: new Set(), lastErr: '' }
     // 空会话（宿主还没给 sessionId）时，用“最近一次会话的 cwd”兜底：
     // 项目条按工作目录显示，没有 sid 不等于没有工作目录。
     function recentSessionCwd() {
@@ -4080,6 +4080,7 @@ window.__ModuleLoader__.load({
         return best
       } catch (e) { return '' }
     }
+    function projectKeyOf(sid, cwd) { return sid ? 'sid:' + sid : 'cwd:' + (cwd || '') }
     function projectFetch() {
       var sid = projectStore.sid
       var cwd = projectStore.cwd
@@ -4092,7 +4093,7 @@ window.__ModuleLoader__.load({
             if (!d || !d.ok) { projectStore.lastErr = 'http:' + (d && d.error ? d.error : 'not-ok'); return }
             // 迟到的响应不许覆盖另一个会话/工作区的数据（否则面板一开就可能把
             // 当前项目状态替换成“别的会话 ⇒ isProject:false”，项目条与项目链一起消失）。
-            if (projectStore.sid !== (sid || '') || projectStore.cwd !== (cwd || '')) return
+            if (projectStore.key !== projectKeyOf(sid, cwd)) return
             projectStore.data = d
             projectStore.subs.forEach(function (fn) { try { fn(d) } catch (e) {} })
           })
@@ -4100,15 +4101,29 @@ window.__ModuleLoader__.load({
       } catch (e) {}
     }
     function projectStart(sid, cwd) {
-      if (projectStore.timer && projectStore.sid === (sid || '') && projectStore.cwd === (cwd || '')) return
-      projectStore.sid = sid || ''
-      projectStore.cwd = cwd || ''
+      var key = projectKeyOf(sid, cwd)
+      if (projectStore.timer && projectStore.key === key) return
+      // 切会话/切工作区时必须先清空旧项目数据，否则旧项目条会出现在所有对话上。
+      if (projectStore.key !== key) {
+        projectStore.key = key
+        projectStore.sid = sid || ''
+        projectStore.cwd = cwd || ''
+        projectStore.data = null
+        projectStore.lastErr = ''
+        projectStore.subs.forEach(function (fn) { try { fn(null) } catch (e) {} })
+      }
       if (!projectStore.timer) projectStore.timer = setInterval(projectFetch, 10000)
       projectFetch()
     }
     function projectStop() {
       if (projectStore.subs.size) return
       if (projectStore.timer) { clearInterval(projectStore.timer); projectStore.timer = 0 }
+      // 没有任何订阅者 ⇒ 清掉键与数据，下个对话从零开始（绝不跨工作区复用）。
+      projectStore.key = ''
+      projectStore.sid = ''
+      projectStore.cwd = ''
+      projectStore.data = null
+      projectStore.lastErr = ''
     }
     /** 输入框上方「工作区」按钮当前显示的目录（可见 UI 的权威来源）。
      * 空会话/切工作区时 sessionId 可能滞后于用户看到的文件夹，项目条必须跟文件夹一致。 */
@@ -4140,8 +4155,6 @@ window.__ModuleLoader__.load({
       // 共享 store 里的键代表“项目条正在显示的那个会话/工作区”，必须**优先于**
       // 面板 props 上可能过期的 sessionId（Panel 是常驻 shell.overlay，props 的 sessionId
       // 可能是它第一次挂载时的会话，切换对话后不会变）。
-      if (projectStore.sid) return { sid: projectStore.sid, cwd: '' }
-      if (projectStore.cwd) return { sid: '', cwd: projectStore.cwd }
       if (injectedSid) return { sid: injectedSid, cwd: '' }
       if (fallbackSid) return { sid: fallbackSid, cwd: '' }
       return { sid: '', cwd: recentSessionCwd() }
@@ -4168,8 +4181,9 @@ window.__ModuleLoader__.load({
       var wsPath = selectedWorkspacePath()
       if (wsPath) key = { sid: '', cwd: wsPath }
       var p = useProjectState(key.sid, key.cwd)
-      // 读取中也不要留空面板：给出可读状态 + 诊断键（否则用户只看到“什么都没有”）。
-      if (!p || !p.isProject) {
+      // 已确认不是项目（例如切到 sage）⇒ 不显示项目块；只有“还没读回来”才显示占位。
+      if (p && !p.isProject) return null
+      if (!p) {
         var diag = t('项目状态读取中…', 'Reading project state…')
         var detail = 'key=' + (key.sid ? 'sid:' + String(key.sid).slice(0, 12) : 'cwd:' + String(key.cwd).slice(-24))
           + ' · data=' + (projectStore.data ? 'yes' : 'no')

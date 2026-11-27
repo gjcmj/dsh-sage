@@ -63,9 +63,9 @@ check(nextText({ next: { id: "prd", label: "PRD", missing: [] } }) === "PRD", "�
 console.log("\n④ 接线（源码级：驾驶舱顶部条与 dock 共用同一载荷）");
 const clientSrc = await readFile(join(here, "client.js"), "utf8");
 check(clientSrc.includes("h(ProjectStrip, { sessionId: sessionId })"), "并排面板与全屏画布都插入 ProjectStrip（点紧凑条就能看到完整项目链）");
-check(clientSrc.includes("function resolveProjectKey") && clientSrc.includes("projectStore.cwd"), "面板优先复用项目条已解析的 sid/cwd，不拿另一个会话去查");
-check(clientSrc.indexOf("if (projectStore.sid)") < clientSrc.indexOf("if (injectedSid)"), "共享 store 键优先于面板可能过期的 props.sessionId");
-check(clientSrc.includes("项目状态读取中") && clientSrc.includes("data=") && clientSrc.includes("lastErr"), "面板读取中不空白，并带 key/data/err 诊断");
+check(clientSrc.includes("function selectedWorkspacePath") && clientSrc.includes("if (wsPath) key = { sid: '', cwd: wsPath }"), "项目条按输入框可见的工作区路径查询，不被滞后 sessionId 带偏");
+check(clientSrc.includes("function projectKeyOf") && clientSrc.includes("projectStore.data = null") && clientSrc.includes("projectStore.key = ''"), "切键/无订阅者时清空项目数据（不会跨对话显示旧项目条）");
+check(clientSrc.includes("项目状态读取中") && clientSrc.includes("data=") && clientSrc.includes("lastErr"), "面板读取中不空白，诊断信息在 title");
 check(!clientSrc.includes("viewMode ? h(ProjectStrip"), "ProjectStrip 不再只在全屏画布显示");
 check(clientSrc.includes("function ProjectStrip") && clientSrc.includes("exp-projstrip"), "ProjectStrip 组件与样式在场");
 check(clientSrc.includes("/plugins/dsh-expert-team/project"), "dock 与 strip 共用同一条工作流路由");
