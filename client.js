@@ -4080,6 +4080,15 @@ window.__ModuleLoader__.load({
       if (projectStore.subs.size) return
       if (projectStore.timer) { clearInterval(projectStore.timer); projectStore.timer = 0 }
     }
+    /** 解析项目查询键：**优先复用项目条已经解析的键**（sid 或 cwd），
+     * 两者都没有时才退到宿主当前会话；绝不拿另一个会话去查（会把状态清空）。 */
+    function resolveProjectKey(injectedSid, fallbackSid) {
+      if (injectedSid) return { sid: injectedSid, cwd: '' }
+      if (projectStore.sid) return { sid: projectStore.sid, cwd: '' }
+      if (projectStore.cwd) return { sid: '', cwd: projectStore.cwd }
+      if (fallbackSid) return { sid: fallbackSid, cwd: '' }
+      return { sid: '', cwd: recentSessionCwd() }
+    }
     function useProjectState(sid, cwd) {
       var s = useState(projectStore.data); var data = s[0], setData = s[1]
       useEffect(function () {
@@ -4098,9 +4107,11 @@ window.__ModuleLoader__.load({
       var fallbackSid = useCurrentSessionId()
       // 面板与项目条必须用**同一个**键：面板没有 sid 时优先复用项目条已解析的键，
       // 不能各自用 useCurrentSessionId 猜（两者可能指向不同会话）。
-      var sid = (props && props.sessionId) || projectStore.sid || fallbackSid
-      var p = useProjectState(sid, sid ? '' : recentSessionCwd())
-      if (!p || !p.isProject) return null
+      var key = resolveProjectKey(props && props.sessionId, fallbackSid)
+      var p = useProjectState(key.sid, key.cwd)
+      // 读取中也不要留空面板：给出可读状态（否则用户只看到“什么都没有”）。
+      if (!p || !p.isProject) return h('div', { className: 'exp-projstrip', role: 'status' },
+        h('div', { className: 'exp-projstrip-h' }, esc(t('项目状态读取中…', 'Reading project state…'))))
       var steps = (p.steps || []).map(function (s) {
         var cls = 'exp-pjstep' + (s.ok ? (s.skipped ? ' skip' : ' ok') : ' miss')
         return h('span', { key: 'pj-' + s.id, className: cls, title: (s.missing && s.missing.length) ? s.missing.join('；') : (s.reason || '') },
@@ -4134,8 +4145,8 @@ window.__ModuleLoader__.load({
     function ProjectDock(props) {
       ensureCss()
       var fallbackSid = useCurrentSessionId()
-      var sid = (props && props.sessionId) || projectStore.sid || fallbackSid
-      var st = useProjectState(sid, sid ? '' : recentSessionCwd())
+      var key = resolveProjectKey(props && props.sessionId, fallbackSid)
+      var st = useProjectState(key.sid, key.cwd)
       if (!st || !st.isProject) return null
       return h('div', {
         className: 'exp-projbar',

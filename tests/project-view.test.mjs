@@ -63,6 +63,8 @@ check(nextText({ next: { id: "prd", label: "PRD", missing: [] } }) === "PRD", "�
 console.log("\n④ 接线（源码级：驾驶舱顶部条与 dock 共用同一载荷）");
 const clientSrc = await readFile(join(here, "client.js"), "utf8");
 check(clientSrc.includes("h(ProjectStrip, { sessionId: sessionId })"), "并排面板与全屏画布都插入 ProjectStrip（点紧凑条就能看到完整项目链）");
+check(clientSrc.includes("function resolveProjectKey") && clientSrc.includes("projectStore.cwd"), "面板优先复用项目条已解析的 sid/cwd，不拿另一个会话去查");
+check(clientSrc.includes("项目状态读取中"), "面板读取中不空白（有可读占位）");
 check(!clientSrc.includes("viewMode ? h(ProjectStrip"), "ProjectStrip 不再只在全屏画布显示");
 check(clientSrc.includes("function ProjectStrip") && clientSrc.includes("exp-projstrip"), "ProjectStrip 组件与样式在场");
 check(clientSrc.includes("/plugins/dsh-expert-team/project"), "dock 与 strip 共用同一条工作流路由");
