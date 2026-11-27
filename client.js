@@ -3641,7 +3641,9 @@ window.__ModuleLoader__.load({
           viewMode
             ? t('💡 全屏画布 · 想边聊边看？点会话头的「🧑‍💼」徽章打开并排面板', 'Full canvas · tip: use the 🧑‍💼 header badge for a side-by-side panel')
             : t('💡 并排面板 · 想要全屏画布？切到上方「🧑‍🔬 专家团」标签', 'Side panel · tip: switch to the 🧑‍🔬 team tab above for the full canvas')),
-        viewMode ? h(ProjectStrip, { sessionId: sessionId }) : null,
+        // 项目链完整条在**两种形态**都显示：侧栏（点紧凑条打开）与全屏画布。
+        // 之前只在画布显示 ⇒ 用户点紧凑条只看到「还没有 run」，看不到 PRD 徽标/就绪/产物。
+        h(ProjectStrip, { sessionId: sessionId }),
         h('div', { className: 'exp-body' },
           errV ? h('div', { className: 'exp-err' }, esc(errV)) : null,
           selNode,
