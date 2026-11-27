@@ -406,6 +406,9 @@ window.__ModuleLoader__.load({
       // 同一层叠上下文里压过手柄（8）。视图切回「对话」时本视图卸载，手柄自然恢复 —— 不改宿主。
       '.exp-canvas{position:relative;z-index:9;width:100%;height:100%;border-left:none;box-shadow:none;border-radius:0}' +
       '.exp-canvas .exp-head{border-radius:0}' +
+      '.exp-panel.exp-inline{position:static!important;left:auto!important;top:auto!important;right:auto!important;bottom:auto!important;width:100%!important;height:auto!important;max-height:none!important;padding:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;z-index:auto!important;background:transparent!important}' +
+      '.exp-inline .exp-head,.exp-inline .exp-modehint{display:none!important}' +
+      '.exp-inline .exp-body{max-height:none!important;height:auto!important}' +
       // ── N1 对话流团队动态胶囊 ──
       '.exp-cap{position:fixed;z-index:118;top:64px;left:50%;transform:translateX(-50%);max-width:76vw;font-size:12px}' +
       '.exp-cap-btn{display:inline-flex;align-items:center;gap:8px;padding:6px 14px;border-radius:999px;background:linear-gradient(180deg,#1f2937,#111827);color:#e6edff;border:1px solid rgba(140,160,255,.45);box-shadow:0 6px 18px rgba(0,0,0,.35);cursor:pointer;max-width:100%}' +
@@ -729,12 +732,8 @@ window.__ModuleLoader__.load({
      * 直接置位 open（setOpen() 是 toggle 语义，会误关已打开的面板）。
      */
     function focusPanelRight() {
-      try {
-        var changed = false
-        if (dockState !== true) { dockState = true; saveLS('et-dock', true); changed = true }
-        if (!open) { open = true; changed = true }
-        if (changed) notify()
-      } catch (e) {}
+      // 面板现在是宿主右侧栏 tab（会话级、全屏由 DSH 负责），不再开浮层。
+      try { openSageTab() } catch (e) {}
     }
     function setPanelWidth(w) { panelWidth = clampW(w); panelWidthUserSet = true; saveLS('et-width', panelWidth); notify(); persistDisplayWidth(panelWidth) }
 
@@ -2564,6 +2563,7 @@ window.__ModuleLoader__.load({
     }
 
     function Panel(props) {
+      var inline = !!(props && props.inline)
       var sidProp = (props && props.sessionId) || ''
       var viewMode = (props && props.mode) === 'view'
       var sessionId = sidProp || useCurrentSession()
@@ -2726,7 +2726,7 @@ window.__ModuleLoader__.load({
           else if (d && !d.ok) { if (d.runs) setRunsMeta(d.runs); setErr(d.error || ''); }
       }
       useEffect(function () {
-        if (!isOpen && !viewMode) return undefined // panel closed & not canvas → no polling
+        if (!inline && !isOpen && !viewMode) return undefined // panel closed & not canvas → no polling
         setLivePublisher(true)   // 面板/画布开着 ⇒ 接管徽章的数据（见 publishToLive 的注释）
         // **双订阅**（性能修复 #3）：`summary` 便宜（阶段/进度/计数）⇒ 按 `pollMs` 快拉，
         // 首屏立刻有内容；`people,feed,artifacts` 贵（成员解析/事件流/日志尾+git）⇒ 至少 6 秒一次，
@@ -3441,7 +3441,7 @@ window.__ModuleLoader__.load({
       var selNode = runSelector.length ? h('select', { className: 'exp-art', value: curSel, onChange: function (e) { var p = e.target.value.split('\u0001'); setSelTask(null); setSelArt(null); setSelRun({ workspace: p[0], runId: p[1] }) } },
         (!curSel ? h('option', { key: '_', value: '', disabled: true }, t('选择 run…', 'Pick a run…')) : null), runSelector) : null
 
-      var panelCls = viewMode ? 'exp-panel exp-canvas' : ('exp-panel' + (docked ? '' : ' exp-float') + (cover ? ' exp-cover' : ''))
+      var panelCls = inline ? 'exp-panel exp-inline' : (viewMode ? 'exp-panel exp-canvas' : ('exp-panel' + (docked ? '' : ' exp-float') + (cover ? ' exp-cover' : '')))
       var panelStyle = viewMode ? null : (docked ? { width: pw + 'px' } : { left: pos.x, top: pos.y, width: pw + 'px' })
       var headCls = 'exp-head' + (docked || viewMode ? '' : ' exp-grab')
       // 服务端 `warming`（本次性能收口新增）：重读被挪到后台、数据取自上一份快照或暂时缺席。
@@ -3490,7 +3490,7 @@ window.__ModuleLoader__.load({
         })
         // 早退**必须在 hook 之后**（见上）；语义与原来的 3351 行完全相同：面板既没开着、也不在
         // 全屏视图 ⇒ 不渲染任何 DOM。关着时的快路径也因此保住：下面那几百行 DOM 构造仍然被跳过。
-        if (!isOpen && !viewMode) return null
+        if (!inline && !isOpen && !viewMode) return null
         // 「设」页签已移除：设置页搬进**官方「设置」菜单**（`settings.section` 槽，见 apply()）。
         // 为什么改：浮层页签是一个只有打开浮层才够得着的第二入口，且它依赖一个「读取设置」的
         // 自建请求路径 —— 一旦宿主路由没注册就永远停在「正在读取设置…」。搬进官方菜单后与
@@ -4334,6 +4334,13 @@ window.__ModuleLoader__.load({
       )
       function openArtifact(a) {
         if (!a || !a.exists || !p.cwd) return
+        var hostSid = (props && props.sessionId) || key.sid
+        if (a.path && a.path.indexOf('.') > -1 && hostSid && ctxRoot && ctxRoot.sidebarRight && typeof ctxRoot.sidebarRight.openResource === 'function') {
+          try {
+            ctxRoot.sidebarRight.openResource('dsh-resource://file/session/' + String(hostSid) + '/' + a.path.split('/').map(encodeURIComponent).join('/'))
+            return
+          } catch (e) {}
+        }
         setPreview(a)
         setPreviewText(t('读取中…', 'Loading…'))
         if (a.path && /\.[A-Za-z]/.test(a.path)) {
@@ -4439,8 +4446,7 @@ window.__ModuleLoader__.load({
       return h('div', { className: 'exp-projstrip', role: 'status' },
         h('div', { className: 'exp-projstrip-h' },
           h('b', null, esc(t('项目流程', 'project flow') + ' · ' + (p.stageLabel || p.stage || ''))),
-          h('span', { className: badgeCls }, esc(badge)),
-          h('span', { className: 'exp-pj-hint' }, esc(t('右上角「⤢ 全屏」', 'top-right ⤢ full')))),
+          h('span', { className: badgeCls }, esc(badge))),
         h('div', { className: 'exp-pjrows' }, core.map(function (ph, i) { return rowOf(ph, i) }).concat([optionalRow]).filter(Boolean)),
         previewBox,
         h('div', { className: 'exp-pjfoot' }, esc(foot))
@@ -4480,7 +4486,7 @@ window.__ModuleLoader__.load({
         className: 'exp-projbar exp-projbar2',
         role: 'status',
         title: t('项目进度（点击打开 Sage 面板）', 'Project progress (click to open the Sage panel)'),
-        onClick: function () { try { focusPanelRight() } catch (e) {} }
+        onClick: function () { try { openSageTab() } catch (e) {} }
       },
         h('div', { className: 'exp-projbar-flow' }, flow),
         h('div', { className: 'exp-projbar-sub' },
@@ -4497,12 +4503,12 @@ window.__ModuleLoader__.load({
       var live = useLiveState(sid)
       // Open DOCKED (md-preview style: reserves space, never covers the
       // workspace). The in-panel「浮动」button switches to a draggable float.
-      function toggle() { if (!isOpen) { dockState = true; saveLS('et-dock', true); notify(); setOpen() } else setOpen() }
+      function toggle() { focusPanelRight() }
       // CSS must exist for the HEADER button too — the panel's own <style> is
       // only in the DOM while the panel is open. Inject once, globally.
       ensureCss()
       var badge = teamBadge(live)
-      var tip = '专家团 · ' + badge.title + '｜点击' + (isOpen ? '收起' : '打开') + '并排面板（全屏画布：切到上方「🧑‍🔬 专家团」标签）'
+      var tip = '专家团 · ' + badge.title + '｜在右侧栏打开 Sage 项目面板'
       return h('button', { className: 'exp-open exp-live-badge' + (badge.cls || ''), title: tip, onClick: toggle },
         h('span', { className: 'exp-live-dot' + (badge.pulse ? ' on' : '') }),
         esc(badge.text))
@@ -4619,7 +4625,10 @@ window.__ModuleLoader__.load({
     exports._live = { esc: esc, tierBadge: tierBadge, TIER_LABELS_ZH: TIER_LABELS_ZH, settingsFormModel: settingsFormModel, runHealthBadge: runHealthBadge }
     // 测试钩子（沿用 `_live` 的约定）：状态条的纯函数可脱离浏览器直接断言。
     exports._subagentBar = { subagentBarModel: subagentBarModel, runningSubagentIds: runningSubagentIds }
-    exports.inject = ['slots', 'sessions', 'workspaces', 'remote', 'uiSession', 'uiWorkspace', 'uiConversation', 'locale']
+    exports.inject = ['slots', 'sessions', 'workspaces', 'remote', 'uiSession', 'uiWorkspace', 'uiConversation', 'sidebarRight', 'sidebarRightTabs', 'locale']
+    var SAGE_TAB_ID = 'sage-project'
+    var SAGE_TAB_KIND = 'sage-project'
+    function openSageTab() { try { if (ctxRoot && ctxRoot.sidebarRight) ctxRoot.sidebarRight.openTab(SAGE_TAB_KIND, { params: {} }) } catch (e) {} }
     var ctxUISession = null
     // 宿主 ctx 本体：只给状态条**降级**取数用（标准 prop `useSessions` 拿不到时，退到
     // `ctx.sessions.list` 的同一份会话 store 快照）。声明位置与 `ctxUISession` 同理：
@@ -4681,6 +4690,14 @@ window.__ModuleLoader__.load({
         // 项目链状态条：同一 dock 槽，order 190（排在子代理条之前，项目级信息优先）。
         ctx.slots.inject('conversation.input.dock', function () {
           return ctx.slots.register({ name: 'conversation.input.dock', id: 'expert-team-project', order: 190, inject: function (sessionId) { return sessionId ? { sessionId: sessionId } : {} } }, wrap(ProjectDock))
+        })
+        // 宿主右侧栏 tab（会话级；全屏/收起/拖宽由 DSH 负责）。
+        ctx.effect(function () {
+          return ctx.sidebarRightTabs.register({ id: SAGE_TAB_ID, kind: SAGE_TAB_KIND, priority: 'extension', title: function () { return t('Sage 项目', 'Sage project') } })
+        })
+        ctx.slots.inject('sidebar.right.pane.tab', function () {
+          return ctx.slots.register({ name: 'sidebar.right.pane.tab', key: SAGE_TAB_ID },
+            function SageTabBody(props) { return h(Panel, { inline: true, sessionId: props && props.sessionId }) })
         })
         ctx.slots.inject('shell.overlay', function () {
           return ctx.slots.register({ name: 'shell.overlay', id: 'expert-team-panel', order: 100 }, wrap(Panel))

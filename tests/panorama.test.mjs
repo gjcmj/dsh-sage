@@ -758,7 +758,7 @@ console.log('\n⑨ Panel 的 hook 顺序：`canvasView` 必须在早退之前，
   }
   // ── ①② 两个语句各出现**恰好一次**（本节靠唯一匹配定位；注释里抄了语句原文也会让这条变红）──
   const CALL = 'var canvasEl = canvasView(';
-  const RET = 'if (!isOpen && !viewMode) return null';
+  const RET = 'if (!inline && !isOpen && !viewMode) return null';
   const occ = (h, n) => h.split(n).length - 1;
   const nCall = occ(panelSrc, CALL), nRet = occ(panelSrc, RET);
   check(nCall === 1, `Panel 里 \`${CALL}\` 恰好出现一次`, `实际 ${nCall} 次`);

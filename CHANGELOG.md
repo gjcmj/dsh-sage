@@ -7,6 +7,20 @@
 
 （暂无）
 
+## 1.12.0
+
+**主题：Sage 面板迁入宿主右侧栏 tab；产物改用宿主文档预览（1A/2A）**。
+
+### 变更
+
+- 注册 `sidebarRightTabs` 类型 `sage-project` 与 `sidebar.right.pane.tab` 内容槽：面板成为**会话级右侧栏 tab**，切换对话不会残留浮层。
+- 紧凑条/页头徽章/团队卡片均改为 `openTab('sage-project')`；全屏、收起、拖宽交给宿主侧栏。
+- 产物点击改为 `sidebarRight.openResource('dsh-resource://file/session/<sid>/<rel>')`，由宿主文档预览 tab 渲染 Markdown（不再有内嵌小滚动框）；目录产物仍显示数量/路径。
+- 移除内嵌预览与「全屏请点上方标签」提示；保留仅作为 API 不可用时的回退。
+
+### 验证
+
+- 自动化：打开 Sage tab → 显示项目流程；点 PRD → 新开 PRD.md 宿主预览 tab（渲染后的 Markdown）；切换会话 → Sage tab 随会话消失。
 ## 1.11.1
 
 **主题：P0.5 —— 紧凑条完整流程、面板编号流程轨、Markdown 渲染、覆盖式全屏、可执行命令与复制反馈**。
