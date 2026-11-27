@@ -7,6 +7,14 @@
 
 （暂无）
 
+## 1.9.8
+
+**主题：面板不再信任常驻壳层上过期的 `props.sessionId`**。
+
+### 修复
+
+- 诊断现场：面板键是 `sid:session-14bc…`（历史上的另一个会话），`/project` 返回 `no workspace`，而项目条用的是当前会话 ⇒ 两者不同键。
+- `resolveProjectKey` 现在把共享 store 里的键（项目条当前键）排在 `props.sessionId` 之前：常驻 `shell.overlay` 的 props 可能是它首次挂载时的会话，切换对话后不会更新。
 ## 1.9.7
 
 **主题：面板“读取中”占位带上诊断键（key/data/err）**。

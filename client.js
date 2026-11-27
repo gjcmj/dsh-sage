@@ -4083,9 +4083,12 @@ window.__ModuleLoader__.load({
     /** 解析项目查询键：**优先复用项目条已经解析的键**（sid 或 cwd），
      * 两者都没有时才退到宿主当前会话；绝不拿另一个会话去查（会把状态清空）。 */
     function resolveProjectKey(injectedSid, fallbackSid) {
-      if (injectedSid) return { sid: injectedSid, cwd: '' }
+      // 共享 store 里的键代表“项目条正在显示的那个会话/工作区”，必须**优先于**
+      // 面板 props 上可能过期的 sessionId（Panel 是常驻 shell.overlay，props 的 sessionId
+      // 可能是它第一次挂载时的会话，切换对话后不会变）。
       if (projectStore.sid) return { sid: projectStore.sid, cwd: '' }
       if (projectStore.cwd) return { sid: '', cwd: projectStore.cwd }
+      if (injectedSid) return { sid: injectedSid, cwd: '' }
       if (fallbackSid) return { sid: fallbackSid, cwd: '' }
       return { sid: '', cwd: recentSessionCwd() }
     }
