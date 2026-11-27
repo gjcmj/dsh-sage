@@ -1,6 +1,6 @@
 {
   "name": "dsh-expert-sage",
-  "version": "1.10.0",
+  "version": "1.11.0",
   "description": "Sage（dsh-expert-sage）：在专家团 12 角色 / 9 阶段交付引擎之上，加上新项目前置工作流 —— kickoff → 发现（可裁剪）→ 多维 PRD（草案/人签定稿）→ 可选原型/技术方案 → 开发。 · Sage wraps the expert-team delivery engine with a configurable front workflow: kickoff -> discovery -> a multi-dimensional PRD (draft, then human-signed final) -> optional prototype/tech plan -> delivery.",
   "type": "module",
   "license": "MIT",

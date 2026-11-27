@@ -65,13 +65,13 @@ const clientSrc = await readFile(join(here, "client.js"), "utf8");
 check(clientSrc.includes("h(ProjectStrip, { sessionId: sessionId })"), "并排面板与全屏画布都插入 ProjectStrip（点紧凑条就能看到完整项目链）");
 check(clientSrc.includes("function selectedWorkspacePath") && clientSrc.includes("if (wsPath) key = { sid: '', cwd: wsPath }"), "项目条按输入框可见的工作区路径查询，不被滞后 sessionId 带偏");
 check(clientSrc.includes("function projectKeyOf") && clientSrc.includes("projectStore.data = null") && clientSrc.includes("projectStore.key = ''"), "切键/无订阅者时清空项目数据（不会跨对话显示旧项目条）");
-check(clientSrc.includes("项目状态读取中") && clientSrc.includes("data=") && clientSrc.includes("lastErr"), "面板读取中不空白，诊断信息在 title");
+check(clientSrc.includes("项目状态读取中") && clientSrc.includes("title: detail"), "面板读取中不空白，键信息在 title");
 check(!clientSrc.includes("viewMode ? h(ProjectStrip"), "ProjectStrip 不再只在全屏画布显示");
 check(clientSrc.includes("function ProjectStrip") && clientSrc.includes("exp-projstrip"), "ProjectStrip 组件与样式在场");
 check(clientSrc.includes("/plugins/dsh-expert-team/project"), "dock 与 strip 共用同一条工作流路由");
 check(clientSrc.includes("className: 'exp-projbar'"), "dock 一行存在");
 check(clientSrc.includes("exp-pjbadge"), "项目条有 PRD 草案/定稿徽标");
-check(clientSrc.includes("exp-projstrip-ready") && clientSrc.includes("ready.prdCoverage"), "就绪度行渲染（维度/开放/亮点/冲突）");
+check(clientSrc.includes("exp-pjgate") && clientSrc.includes("定稿门禁") && clientSrc.includes("exp-pjrows"), "PRD 阶段渲染定稿门禁清单与阶段手风琴");
 check(clientSrc.includes("exp-pjart"), "产物区渲染（缺项标拒绝色）");
 check(!clientSrc.includes("settings.section', 'expert-team-workflow"), "不新增第二个设置入口");
 
