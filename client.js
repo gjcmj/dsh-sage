@@ -509,9 +509,9 @@ window.__ModuleLoader__.load({
       '.exp-pjnode.done{background:#eef8f1;color:#2f6b47;border-color:#8fc9a8}' +
       '.exp-pjnode.next{background:#e8f0ff;color:#1f5fd0;border-color:#9dbcf0}' +
       '.exp-pjnode.skip{background:#fbf5ea;color:#8a6100;border-color:#d7c3a0}' +
-      '.exp-projbar2{flex-direction:column;align-items:stretch;gap:3px;padding:5px 12px}' +
-      '.exp-projbar-flow{display:flex;align-items:center;gap:4px;overflow:hidden;white-space:nowrap;font-size:11px}' +
-      '.exp-pjmini{white-space:nowrap}' +
+      '.exp-projbar2{align-items:center;gap:10px;padding:4px 12px;flex-wrap:nowrap}' +
+      '.exp-projbar-flow{display:flex;align-items:center;gap:4px;overflow:hidden;white-space:nowrap;font-size:11px;flex:1 1 auto;min-width:0}' +
+      '.exp-pjmini{white-space:nowrap;flex:none}' +
       '.exp-pjmini.done{color:#2f6b47}' +
       '.exp-pjmini.next{color:#1f5fd0;font-weight:700}' +
       '.exp-pjmini.todo{color:#6b7c8f}' +
@@ -4489,10 +4489,7 @@ window.__ModuleLoader__.load({
         onClick: function () { try { openSageTab() } catch (e) {} }
       },
         h('div', { className: 'exp-projbar-flow' }, flow),
-        h('div', { className: 'exp-projbar-sub' },
-          h('span', { className: 'exp-pjmini-badge' }, esc(badge)),
-          h('span', { className: 'exp-projbar-next' }, esc(nextText))
-        )
+        h('span', { className: 'exp-projbar-next' }, esc(nextText))
       )
     }
 
@@ -4693,7 +4690,7 @@ window.__ModuleLoader__.load({
         })
         // 宿主右侧栏 tab（会话级；全屏/收起/拖宽由 DSH 负责）。
         ctx.effect(function () {
-          return ctx.sidebarRightTabs.register({ id: SAGE_TAB_ID, kind: SAGE_TAB_KIND, priority: 'extension', title: function () { return t('Sage 项目', 'Sage project') } })
+          return ctx.sidebarRightTabs.register({ id: SAGE_TAB_ID, kind: SAGE_TAB_KIND, priority: 'extension', title: function () { return 'Sage' } })
         })
         ctx.slots.inject('sidebar.right.pane.tab', function () {
           return ctx.slots.register({ name: 'sidebar.right.pane.tab', key: SAGE_TAB_ID },
