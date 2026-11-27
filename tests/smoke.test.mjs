@@ -15,7 +15,7 @@ assert.ok(inject.includes('commands'));
 
 // 2) registers a `team` command
 let registered = null;
-apply({ commands: { register: (d) => { registered = d; } } });
+apply({ commands: { register: (d) => { if (!registered && d.name === 'team') registered = d; } } });
 assert.ok(registered, 'command registered');
 assert.equal(registered.name, 'team');
 assert.equal(typeof registered.handler, 'function');

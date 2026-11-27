@@ -69,7 +69,7 @@ check(clientSrc.includes("项目状态读取中") && clientSrc.includes("title: 
 check(!clientSrc.includes("viewMode ? h(ProjectStrip"), "ProjectStrip 不再只在全屏画布显示");
 check(clientSrc.includes("function ProjectStrip") && clientSrc.includes("exp-projstrip"), "ProjectStrip 组件与样式在场");
 check(clientSrc.includes("/plugins/dsh-expert-team/project"), "dock 与 strip 共用同一条工作流路由");
-check(clientSrc.includes("className: 'exp-projbar'"), "dock 一行存在");
+check(clientSrc.includes("exp-projbar2") && clientSrc.includes("exp-projbar-flow"), "紧凑条含完整阶段流（两行）");
 check(clientSrc.includes("exp-pjbadge"), "项目条有 PRD 草案/定稿徽标");
 check(clientSrc.includes("exp-pjgate") && clientSrc.includes("定稿门禁") && clientSrc.includes("exp-pjrows"), "PRD 阶段渲染定稿门禁清单与阶段手风琴");
 check(clientSrc.includes("exp-pjart"), "产物区渲染（缺项标拒绝色）");

@@ -482,9 +482,40 @@ window.__ModuleLoader__.load({
       '.exp-pjbtn{margin-left:auto;font-size:10.5px;padding:2px 8px;border-radius:6px;border:1px solid #c9d5e3;background:#fbfcfe;color:#33475b;cursor:pointer}' +
       '.exp-pjpreview{margin-top:8px;border:1px solid #d7dde6;border-radius:8px;background:#fbfcfe;padding:6px}' +
       '.exp-pjpreview-h{display:flex;align-items:center;gap:8px;font-size:11px}' +
-      '.exp-pjpreview-t{max-height:240px;overflow:auto;margin:5px 0 0;font-size:10.5px;line-height:1.45;white-space:pre-wrap;word-break:break-word}' +
+      '.exp-pjpreview-t{max-height:240px;overflow:auto;margin:5px 0 0;font-size:10.5px;line-height:1.45;word-break:break-word}' +
+      '.exp-panel.exp-cover{position:fixed!important;left:0!important;top:0!important;right:0!important;bottom:0!important;width:100vw!important;height:100vh!important;max-width:none!important;z-index:130!important;border-radius:0}' +
+      '.exp-pjcmd{display:block;font-family:ui-monospace,Menlo,monospace;font-size:10px;color:#4a5a6b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}' +
+      '.exp-md-h1{font-size:15px;font-weight:700;margin:6px 0 3px}' +
+      '.exp-md-h2{font-size:13px;font-weight:700;margin:6px 0 3px}' +
+      '.exp-md-h3{font-size:12px;font-weight:700;margin:5px 0 2px}' +
+      '.exp-md-h4{font-size:11.5px;font-weight:600;margin:5px 0 2px}' +
+      '.exp-md-p{font-size:11px;line-height:1.6;margin:2px 0}' +
+      '.exp-md-li{font-size:11px;line-height:1.55;margin:1px 0;padding-left:6px}' +
+      '.exp-md-quote{font-size:11px;color:#6b7c8f;border-left:2px solid #d7dde6;padding-left:6px;margin:2px 0}' +
+      '.exp-md-table{font-family:ui-monospace,Menlo,monospace;font-size:10px;white-space:pre-wrap;color:#4a5a6b;margin:1px 0}' +
+      '.exp-md-code{font-family:ui-monospace,Menlo,monospace;font-size:10px;background:#f1f4f8;padding:0 3px;border-radius:3px}' +
+      '.exp-md-pre{font-family:ui-monospace,Menlo,monospace;font-size:10px;background:#f6f8fb;padding:6px;border-radius:6px;overflow:auto;margin:4px 0}' +
       '.exp-pjfoot{margin-top:6px;font-size:10.5px;color:#8a97a6}' +
       '.exp-pj-hint{margin-left:auto;font-size:10px;color:#8a97a6}' +
+      '.exp-pjrows{position:relative}' +
+      '.exp-pjrow{position:relative;padding-left:20px}' +
+      '.exp-pjrow::before{content:"";position:absolute;left:7px;top:0;bottom:0;width:2px;background:#e6ecf3}' +
+      '.exp-pjrow:first-child::before{top:12px}' +
+      '.exp-pjrow:last-child::before{bottom:auto;height:14px}' +
+      '.exp-pjnode{position:absolute;left:0;top:8px;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;background:#eef2f7;color:#6b7c8f;border:1px solid #d7dde6}' +
+      '.exp-pjnode.done{background:#eef8f1;color:#2f6b47;border-color:#8fc9a8}' +
+      '.exp-pjnode.next{background:#e8f0ff;color:#1f5fd0;border-color:#9dbcf0}' +
+      '.exp-pjnode.skip{background:#fbf5ea;color:#8a6100;border-color:#d7c3a0}' +
+      '.exp-projbar2{flex-direction:column;align-items:stretch;gap:3px;padding:5px 12px}' +
+      '.exp-projbar-flow{display:flex;align-items:center;gap:4px;overflow:hidden;white-space:nowrap;font-size:11px}' +
+      '.exp-pjmini{white-space:nowrap}' +
+      '.exp-pjmini.done{color:#2f6b47}' +
+      '.exp-pjmini.next{color:#1f5fd0;font-weight:700}' +
+      '.exp-pjmini.todo{color:#6b7c8f}' +
+      '.exp-pjmini.skip{color:#8a97a6}' +
+      '.exp-pjmini-arrow{color:#b8c4d2}' +
+      '.exp-projbar-sub{display:flex;align-items:center;gap:8px;font-size:10.5px;color:#6b7c8f}' +
+      '.exp-pjmini-badge{font-size:10px;padding:0 6px;border-radius:999px;border:1px solid #c9d5e3;background:#f1f4f8;color:#4a5a6b}' +
       // ── 任务人员流转（波次带）样式：来自 UI.md §4.2（.etv-*，主题变量 + 深色覆写，零依赖）──
       '/* ── 任务人员流转：竖直时间轴 + 波次带 ── */\n.etv-root{display:block;position:relative;padding:2px 0 4px}\n.etv-note{font-size:11px;color:var(--dsw-alias-label-secondary);margin:2px 0 8px;display:flex;align-items:center;gap:6px}\n.etv-wide-btn{margin-left:auto;font-size:10.5px;padding:1px 8px;border-radius:7px;border:1px solid var(--dsw-alias-border-l2);background:var(--dsw-alias-bg-layer-1);color:inherit;cursor:pointer}\n.etv-wave{position:relative;margin:0 0 var(--etv-wave-gap);border-radius:0 8px 8px 0}\n.etv-wave.cur{background:rgba(65,118,230,.055);border-left:2px solid var(--dsw-alias-state-business-primary)}\n.etv-wave-h{display:flex;align-items:center;gap:6px;height:22px;padding-left:var(--etv-indent);font-size:11.5px;font-weight:600;cursor:default}\n.etv-wave.collapsed .etv-wave-h{cursor:pointer}\n.etv-wave-no{display:inline-flex;align-items:center;justify-content:center;height:16px;min-width:16px;padding:0 5px;border-radius:8px;font-size:10px;font-weight:700;background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-secondary);font-variant-numeric:tabular-nums}\n.etv-wave.cur .etv-wave-no{background:var(--dsw-alias-state-business-primary);color:#fff}\n.etv-time{font-family:ui-monospace,Menlo,monospace;font-size:10.5px;color:var(--dsw-alias-label-secondary);font-variant-numeric:tabular-nums}\n.etv-delta{font-size:10px;color:var(--dsw-alias-label-tertiary)}\n.etv-wave-n{font-size:10.5px;color:var(--dsw-alias-label-tertiary)}\n.etv-wave-sum{margin-left:auto;font-size:10.5px;color:var(--dsw-alias-label-tertiary);max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}\n.etv-cards{display:flex;flex-wrap:wrap;gap:var(--etv-gap);padding:6px 0 2px var(--etv-indent)}\n.etv-scroll{overflow-x:auto;padding-bottom:4px;scrollbar-width:thin}\n.etv-scroll .etv-cards{flex-wrap:nowrap}\n.etv-card{flex:1 1 var(--etv-card-min);min-width:0;max-width:100%;box-sizing:border-box;border:1.4px solid var(--etv-idle);border-radius:9px;background:var(--dsw-alias-bg-layer-1);padding:6px 8px 6px 7px;min-height:56px;cursor:pointer;position:relative;transition:border-color .12s,background .12s}\n.etv-card:hover{border-color:var(--dsw-alias-state-business-primary);background:var(--dsw-alias-interactive-bg-hover)}\n.etv-card.sel{background:var(--dsw-alias-state-business-tertiary);box-shadow:0 0 0 1px var(--dsw-alias-state-business-primary)}\n.etv-card.run{border-color:var(--etv-run);border-width:2px;background:rgba(59,110,245,.08)}\n.etv-card.done{border-color:var(--etv-ok);background:rgba(34,176,125,.10)}\n.etv-card.rework{border-color:var(--etv-rework);border-style:dashed;background:rgba(217,119,6,.10)}\n.etv-card.failed{border-color:var(--etv-fail);background:rgba(192,57,43,.09)}\n.etv-card.more{align-items:center;justify-content:center;display:flex;border-style:dashed;color:var(--dsw-alias-label-secondary);font-size:11.5px}\n.etv-card.tiny{min-height:40px}\n.etv-card.tiny .etv-task{display:none}\n.etv-card-h{display:flex;align-items:center;gap:5px;min-width:0}\n.etv-card .exp-ava{width:18px;height:18px;font-size:10px;margin-right:0;flex:none}\n.etv-role{font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:0 1 auto;min-width:0}\n.etv-who{font-family:ui-monospace,Menlo,monospace;font-size:10.5px;color:var(--dsw-alias-label-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:0 1 auto;min-width:0}\n.etv-task{margin-top:3px;font-size:11px;line-height:1.35;color:var(--dsw-alias-label-primary);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}\n.etv-card-f{display:flex;align-items:center;gap:6px;margin-top:5px;height:16px}\n.etv-dot{width:8px;height:8px;border-radius:50%;flex:none;display:inline-block}\n.etv-dot.run{animation:exp-pulse 1.4s ease-in-out infinite}\n.etv-dot.hollow{background:transparent!important;border:1.5px solid var(--etv-idle)}\n.etv-dur{margin-left:auto;font-family:ui-monospace,Menlo,monospace;font-size:10px;color:var(--dsw-alias-label-secondary);font-variant-numeric:tabular-nums}\n.etv-rework-tag{position:absolute;top:-7px;left:6px;font-size:9.5px;line-height:14px;padding:0 5px;border-radius:7px;background:var(--dsw-alias-state-warn-tertiary,#fff7ea);border:1px solid #f3c9a0;color:#a34a00}\n.etv-rail{position:absolute;left:0;top:0;bottom:0;width:16px;pointer-events:none}\n.etv-rail-i{position:absolute;left:7px;top:0;bottom:0;width:2px;background:var(--etv-line)}\n.etv-rail-n{position:absolute;left:3px;width:10px;height:10px;border-radius:50%;border:2px solid var(--dsw-alias-bg-layer-1);box-sizing:content-box}\n.etv-handoff{stroke:#8aa8e8;stroke-width:1.4;fill:none}\n.etv-rework-link{stroke:var(--etv-rework);stroke-width:1.5;stroke-dasharray:4 3;fill:none}\n.etv-para{font-size:10px;color:var(--dsw-alias-label-tertiary);margin-left:2px}\n.etv-group{border:1px dashed var(--dsw-alias-border-l2);border-radius:9px;padding:6px 8px;margin:0 0 var(--etv-gap) var(--etv-indent);background:var(--dsw-alias-bg-module-platform)}\n/* ── 深色主题覆写（零依赖：prefers-color-scheme 兜底；若 shell 在根节点暴露主题标记，优先用它） ── */\n@media (prefers-color-scheme:dark){\n  .exp-panel{--etv-run:#679efe;--etv-ok:#4ed17e;--etv-rework:#f7ad31;--etv-fail:#ff7b7b;--etv-idle:#adb2b8;\n             --etv-text-ok:#4ed17e;--etv-text-run:#679efe;--etv-text-rework:#f7ad31}\n  .etv-handoff{stroke:#679efe}\n  .etv-rework-tag{background:#3a2c14;border-color:#7a5a22;color:#f7ad31}\n  .etv-degrade.warn{background:rgba(247,173,49,.12);color:#f7ad31}\n  .etv-degrade.info{color:#9dc0ff}\n  .etv-wave.cur{background:rgba(103,158,254,.10)}\n}\n/* ── 无障碍：减少动效 ── */\n@media (prefers-reduced-motion:reduce){.etv-dot.run,.etv-skel{animation:none!important}}'
 
@@ -864,6 +895,41 @@ window.__ModuleLoader__.load({
     // Kept as the identity (all call sites document "this is text, not markup";
     // there is no innerHTML/dangerouslySetInnerHTML anywhere in this client).
     function esc(s) { return String(s == null ? '' : s) }
+    // 极简 Markdown 渲染（无依赖、只转义不解析 HTML）：标题/列表/代码/表格/引用/粗体行内码。
+    function mdInline(s, keyBase) {
+      var parts = String(s).split(/(\*\*[^*]+\*\*|`[^`]+`)/g)
+      return parts.map(function (p, i) {
+        if (/^\*\*.+\*\*$/.test(p)) return h('strong', { key: 'b' + keyBase + i }, p.slice(2, -2))
+        if (/^`.+`$/.test(p)) return h('code', { key: 'c' + keyBase + i, className: 'exp-md-code' }, p.slice(1, -1))
+        return p
+      })
+    }
+    function renderMarkdown(text) {
+      var lines = String(text || '').replace(/\r\n/g, '\n').split('\n')
+      var out = []
+      var code = []
+      var inCode = false
+      for (var i = 0; i < lines.length; i++) {
+        var line = lines[i]
+        if (/^\s*```/.test(line)) {
+          if (inCode) { out.push(h('pre', { key: 'pre' + i, className: 'exp-md-pre' }, code.join('\n'))); code = []; inCode = false }
+          else inCode = true
+          continue
+        }
+        if (inCode) { code.push(line); continue }
+        if (!line.trim()) continue
+        var hm = /^(#{1,4})\s+(.+)$/.exec(line)
+        if (hm) { out.push(h('div', { key: 'h' + i, className: 'exp-md-h exp-md-h' + hm[1].length }, mdInline(hm[2], 'h' + i))); continue }
+        if (/^\s*[-*]\s+/.test(line)) { out.push(h('div', { key: 'li' + i, className: 'exp-md-li' }, mdInline(line.replace(/^\s*[-*]\s+/, '• '), 'l' + i))); continue }
+        if (/^\s*\d+[.、]\s+/.test(line)) { out.push(h('div', { key: 'oli' + i, className: 'exp-md-li' }, mdInline(line, 'o' + i))); continue }
+        if (/^>\s?/.test(line)) { out.push(h('div', { key: 'q' + i, className: 'exp-md-quote' }, mdInline(line.replace(/^>\s?/, ''), 'q' + i))); continue }
+        if (/\|/.test(line) && line.trim().indexOf('|') === 0) { out.push(h('div', { key: 'tb' + i, className: 'exp-md-table' }, line.replace(/\|/g, '  '))); continue }
+        out.push(h('p', { key: 'p' + i, className: 'exp-md-p' }, mdInline(line, 'p' + i))
+        )
+      }
+      if (inCode && code.length) out.push(h('pre', { key: 'pre-end', className: 'exp-md-pre' }, code.join('\n')))
+      return out
+    }
     function basename(p) { var i = String(p).lastIndexOf('/'); return i >= 0 ? String(p).slice(i + 1) : String(p) }
 
     var PHASES = ['clarify', 'research', 'design', 'spec-review', '方案确认', 'implement', 'review', 'test', 'deliver']
@@ -2502,6 +2568,14 @@ window.__ModuleLoader__.load({
       var viewMode = (props && props.mode) === 'view'
       var sessionId = sidProp || useCurrentSession()
       var isOpen = useOpen()
+      var coverS = useState(false)
+      var cover = coverS[0], setCover = coverS[1]
+      useEffect(function () {
+        if (!cover) return
+        function onKey(e) { if (e && e.key === 'Escape') setCover(false) }
+        window.addEventListener('keydown', onKey)
+        return function () { window.removeEventListener('keydown', onKey) }
+      }, [cover])
       var nativeWf = useNativeWf()
       var docked = useDocked()
       var pos = usePanelPos()
@@ -3367,7 +3441,7 @@ window.__ModuleLoader__.load({
       var selNode = runSelector.length ? h('select', { className: 'exp-art', value: curSel, onChange: function (e) { var p = e.target.value.split('\u0001'); setSelTask(null); setSelArt(null); setSelRun({ workspace: p[0], runId: p[1] }) } },
         (!curSel ? h('option', { key: '_', value: '', disabled: true }, t('选择 run…', 'Pick a run…')) : null), runSelector) : null
 
-      var panelCls = viewMode ? 'exp-panel exp-canvas' : ('exp-panel' + (docked ? '' : ' exp-float'))
+      var panelCls = viewMode ? 'exp-panel exp-canvas' : ('exp-panel' + (docked ? '' : ' exp-float') + (cover ? ' exp-cover' : ''))
       var panelStyle = viewMode ? null : (docked ? { width: pw + 'px' } : { left: pos.x, top: pos.y, width: pw + 'px' })
       var headCls = 'exp-head' + (docked || viewMode ? '' : ' exp-grab')
       // 服务端 `warming`（本次性能收口新增）：重读被挪到后台、数据取自上一份快照或暂时缺席。
@@ -3662,13 +3736,14 @@ window.__ModuleLoader__.load({
           warmingList.length ? h('span', { className: 'exp-warming', title: t('后台处理中（', 'working in background: ') + warmingTitle + warmingTail }, t('更新中', 'warming')) : null,
           capKeys.length ? h('span', { className: 'exp-scope', title: t('按设计上限（不是故障）：', 'by design, not a failure: ') + capTitle }, t('另有 ' + capOver + ' 条按上限只列名', capOver + ' capped (name only)')) : null,
           h('span', { style: { display: 'flex', gap: 6 } },
+            !viewMode ? h('button', { className: 'exp-close', onClick: function () { setCover(!cover) } }, cover ? t('收起', 'Exit full') : t('⤢ 全屏', '⤢ Full')) : null,
             !viewMode ? h('button', { className: 'exp-close', title: docked ? t('转为可拖动浮窗', 'Make floating') : t('停靠回右侧', 'Dock right'), onClick: function () { setDock(!docked) } }, docked ? t('浮动', 'Float') : t('停靠', 'Dock')) : null,
             viewMode ? h('button', { className: 'exp-close', onClick: function () { try { if (props && props.openView) props.openView('chat', '') } catch (e) {} } }, t('回到对话', 'Chat')) : null,
             !viewMode ? h('button', { className: 'exp-close', onClick: setOpen }, t('关闭', 'Close')) : null)),
         h('div', { className: 'exp-modehint' },
           viewMode
             ? t('💡 全屏画布 · 想边聊边看？点会话头的「🧑‍💼」徽章打开并排面板', 'Full canvas · tip: use the 🧑‍💼 header badge for a side-by-side panel')
-            : t('💡 并排面板 · 想要全屏画布？切到上方「🧑‍🔬 Sage」标签', 'Side panel · tip: switch to the 🧑‍🔬 Sage tab above for the full canvas')),
+            : t('💡 点右上角「⤢ 全屏」可覆盖对话区（Esc 或「收起」退出）', 'Side panel · tip: use ⤢ Full to cover the chat (Esc or Exit full to return)')),
         // 项目链完整条在**两种形态**都显示：侧栏（点紧凑条打开）与全屏画布。
         // 之前只在画布显示 ⇒ 用户点紧凑条只看到「还没有 run」，看不到 PRD 徽标/就绪/产物。
         h(ProjectStrip, { sessionId: sessionId }),
@@ -4209,6 +4284,9 @@ window.__ModuleLoader__.load({
       var txS = useState('')
       var previewText = txS[0]
       var setPreviewText = txS[1]
+      var cpS = useState(false)
+      var copied = cpS[0]
+      var setCopied = cpS[1]
       function nextPhaseIdOf(v) {
         var rows = (v && v.phases) || []
         var ph = rows.filter(function (x) { return !x.done && !x.skipped })[0]
@@ -4261,7 +4339,7 @@ window.__ModuleLoader__.load({
         if (a.path && /\.[A-Za-z]/.test(a.path)) {
           fetch('/plugins/dsh-expert-team/file?workspace=' + encodeURIComponent(p.cwd) + '&path=' + encodeURIComponent(a.path), { credentials: 'same-origin' })
             .then(function (r) { return r.json() })
-            .then(function (d) { setPreviewText(d && d.ok ? String(d.text || '').slice(0, 9000) : t('读不到：', 'cannot read: ') + String((d && d.error) || '')) })
+            .then(function (d) { setPreviewText(d && d.ok ? String(d.text || '').slice(0, 40000) : t('读不到：', 'cannot read: ') + String((d && d.error) || '')) })
             .catch(function () { setPreviewText(t('读不到（网络错误）', 'cannot read (network)')) })
           return
         }
@@ -4286,9 +4364,19 @@ window.__ModuleLoader__.load({
             h('div', null, esc(t('先定稿 PRD 才能启动开发', 'finalize the PRD before development'))),
             h('button', { className: 'exp-pjbtn', onClick: function () { setOpenPhase('prd') } }, esc(t('去看还差什么', 'see what is missing'))))
         }
+        var prdPath = (artBy.prd && artBy.prd.path) || 'docs/PRD.md'
+        var prdVer = prd.version ? ' v' + String(prd.version) : ''
+        var teamCmd = '/team 按 ' + prdPath + prdVer + ' 实现 MVP'
         return h('div', { className: 'exp-pjcta' },
           h('div', null, esc(t('还没有团队 run。启动一次后，成员、任务和产物会出现在这里。', 'no team run yet; start one to see members, tasks and artifacts here.'))),
-          h('button', { className: 'exp-pjbtn', onClick: function () { try { navigator.clipboard.writeText('/team <task>') } catch (e) {} } }, esc(t('复制 /team <task>', 'copy /team <task>'))))
+          h('code', { className: 'exp-pjcmd' }, esc(teamCmd)),
+          h('button', { className: 'exp-pjbtn', 'aria-live': 'polite', onClick: function () {
+            try {
+              navigator.clipboard.writeText(teamCmd)
+              setCopied(true)
+              setTimeout(function () { setCopied(false) }, 1500)
+            } catch (e) { setCopied(false) }
+          } }, esc(copied ? t('已复制 ✓', 'copied ✓') : t('复制命令', 'copy command'))))
       }
       function bodyOf(ph) {
         var kids = []
@@ -4305,7 +4393,7 @@ window.__ModuleLoader__.load({
         if (ph.id === 'dev') kids.push(devBody())
         return h('div', { className: 'exp-pjbody' }, kids)
       }
-      function rowOf(ph) {
+      function rowOf(ph, idx) {
         var isOpen = openPhase === ph.id
         var isNext = nextPhaseIdOf(p) === ph.id
         var cls = 'exp-pjrow' + (isOpen ? ' open' : '') + (ph.done ? ' done' : '') + (isNext ? ' next' : '')
@@ -4313,13 +4401,15 @@ window.__ModuleLoader__.load({
         if (ph.id === 'discovery') summary = t('调研 ' + String((p.counts && p.counts.researchFiles) || 0) + ' 篇', 'research ' + String((p.counts && p.counts.researchFiles) || 0))
         if (ph.id === 'prd' && prd.status && prd.status !== 'unknown') summary = t('门禁 ' + gatePass + '/' + gate.length, 'gate ' + gatePass + '/' + gate.length)
         if (ph.id === 'dev') summary = t(String((p.counts && p.counts.teamRuns) || 0) + ' 个 run', String((p.counts && p.counts.teamRuns) || 0) + ' runs')
+        var stCls = ph.skipped ? 'skip' : ph.done ? 'done' : (isNext ? 'next' : 'todo')
         var head = h('button', { className: 'exp-pjrow-h', onClick: function () { setOpenPhase(isOpen ? null : ph.id) }, 'aria-expanded': isOpen },
-          h('span', { className: 'exp-pjdot ' + (ph.skipped ? 'skip' : ph.done ? 'done' : (isNext ? 'next' : 'todo')) }),
           h('span', { className: 'exp-pjl' }, esc(ph.label)),
           summary ? h('span', { className: 'exp-pjm' }, esc(summary)) : null,
           h('span', { className: 'exp-pjs' }, esc(statusWord(ph)))
         )
-        return h('div', { key: 'ph-' + ph.id, className: cls }, head, isOpen ? bodyOf(ph) : null)
+        return h('div', { key: 'ph-' + ph.id, className: cls },
+          h('span', { className: 'exp-pjnode ' + stCls }, esc(String(idx + 1))),
+          head, isOpen ? bodyOf(ph) : null)
       }
       var phases = p.phases || []
       var core = phases.filter(function (ph) { return ph.id !== 'prototype' && ph.id !== 'tech-plan' })
@@ -4332,7 +4422,7 @@ window.__ModuleLoader__.load({
       var optionalBody = openPhase === 'optional' ? h('div', { className: 'exp-pjbody' }, optional.map(function (ph) {
         return h('div', { key: 'op-' + ph.id, className: 'exp-pjnote' }, esc(ph.label + ' · ' + statusWord(ph)))
       })) : null
-      var optionalRow = optional.length ? h('div', { key: 'ph-opt', className: 'exp-pjrow opt' }, optionalHead, optionalBody) : null
+      var optionalRow = optional.length ? h('div', { key: 'ph-opt', className: 'exp-pjrow opt' }, h('span', { className: 'exp-pjnode skip' }, '–'), optionalHead, optionalBody) : null
       var badge = prd.finalOk ? t('PRD 定稿', 'PRD final') : (prd.status === 'draft' ? t('PRD 草案', 'PRD draft') : t('PRD 未开始', 'PRD none'))
       var badgeCls = 'exp-pjbadge' + (prd.finalOk ? ' final' : (prd.status === 'draft' ? ' draft' : ''))
       var previewBox = null
@@ -4342,7 +4432,7 @@ window.__ModuleLoader__.load({
             h('b', null, esc(preview.label || preview.key)),
             h('span', null, esc(preview.path || '')),
             h('button', { className: 'exp-pjbtn', onClick: function () { setPreview(null); setPreviewText('') } }, esc(t('关闭', 'close')))),
-          h('pre', { className: 'exp-pjpreview-t' }, esc(previewText))
+          h('div', { className: 'exp-pjpreview-t' }, renderMarkdown(previewText))
         )
       }
       var foot = t('证据 ' + String((p.counts && p.counts.researchFiles) || 0) + ' 篇调研 · 决策记录 ' + (artBy.decisions && artBy.decisions.exists ? '1' : '0'), 'evidence ' + String((p.counts && p.counts.researchFiles) || 0) + ' · decisions ' + (artBy.decisions && artBy.decisions.exists ? '1' : '0'))
@@ -4350,8 +4440,8 @@ window.__ModuleLoader__.load({
         h('div', { className: 'exp-projstrip-h' },
           h('b', null, esc(t('项目流程', 'project flow') + ' · ' + (p.stageLabel || p.stage || ''))),
           h('span', { className: badgeCls }, esc(badge)),
-          h('span', { className: 'exp-pj-hint' }, esc(t('全屏请点上方「🧑‍🔬 Sage」', 'full canvas: the Sage tab above')))),
-        h('div', { className: 'exp-pjrows' }, core.map(rowOf).concat([optionalRow]).filter(Boolean)),
+          h('span', { className: 'exp-pj-hint' }, esc(t('右上角「⤢ 全屏」', 'top-right ⤢ full')))),
+        h('div', { className: 'exp-pjrows' }, core.map(function (ph, i) { return rowOf(ph, i) }).concat([optionalRow]).filter(Boolean)),
         previewBox,
         h('div', { className: 'exp-pjfoot' }, esc(foot))
       )
@@ -4373,15 +4463,30 @@ window.__ModuleLoader__.load({
       var nextText = prd.finalOk
         ? (runs > 0 ? t(String(runs) + ' 个 run', String(runs) + ' runs') : t('下一步：启动开发', 'next: start development'))
         : t('下一步：定稿 PRD', 'next: finalize PRD')
+      var phases = st.phases || []
+      var nid = (phases.filter(function (x) { return !x.done && !x.skipped })[0] || {}).id
+      var core = phases.filter(function (x) { return x.id !== 'prototype' && x.id !== 'tech-plan' })
+      var opt = phases.filter(function (x) { return x.id === 'prototype' || x.id === 'tech-plan' })
+      var flow = []
+      core.forEach(function (ph, i) {
+        if (i) flow.push(h('span', { key: 'ar' + i, className: 'exp-pjmini-arrow' }, '→'))
+        var cls = 'exp-pjmini ' + (ph.skipped ? 'skip' : ph.done ? 'done' : (ph.id === nid ? 'next' : 'todo'))
+        var mark = ph.skipped ? '–' : ph.done ? '✓' : (ph.id === nid ? '◉' : '○')
+        var short = ph.id === 'kickoff' ? t('立项', 'kickoff') : ph.id === 'discovery' ? t('发现', 'discover') : ph.id === 'prd' ? 'PRD' : t('开发', 'dev')
+        flow.push(h('span', { key: 'ph' + ph.id, className: cls }, esc(mark + ' ' + short)))
+      })
+      if (opt.length) flow.push(h('span', { key: 'opt', className: 'exp-pjmini skip' }, esc(t('–原型·方案', '–proto·plan'))))
       return h('div', {
-        className: 'exp-projbar',
+        className: 'exp-projbar exp-projbar2',
         role: 'status',
         title: t('项目进度（点击打开 Sage 面板）', 'Project progress (click to open the Sage panel)'),
         onClick: function () { try { focusPanelRight() } catch (e) {} }
       },
-        h('span', { className: 'exp-projbar-stage' }, esc(stageShort)),
-        h('span', { className: 'exp-projbar-dock' }, esc(badge)),
-        h('span', { className: 'exp-projbar-next' }, esc(nextText))
+        h('div', { className: 'exp-projbar-flow' }, flow),
+        h('div', { className: 'exp-projbar-sub' },
+          h('span', { className: 'exp-pjmini-badge' }, esc(badge)),
+          h('span', { className: 'exp-projbar-next' }, esc(nextText))
+        )
       )
     }
 

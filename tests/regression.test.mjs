@@ -131,7 +131,7 @@ const fakeSubs = [{ id: 'sub-a1', label: '调研AI审核现状', activity: 'runn
 const wfEvents = [];
 const eventListeners = {};
 const fakeCtx = {
-  commands: { register: (d) => { registered = d; } },
+  commands: { register: (d) => { if (!registered && d.name === 'team') registered = d; } },
   on: (ev, fn) => { (eventListeners[ev] = eventListeners[ev] || []).push(fn); },
   get: (k) => {
     if (k === 'subagents') return { listChildren: async () => fakeSubs };
