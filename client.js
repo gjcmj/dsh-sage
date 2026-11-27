@@ -429,7 +429,7 @@ window.__ModuleLoader__.load({
       // 用户无法一眼判断"现在到底有没有子代理在跑"。本条的运行态判据与页头徽章**同源**
       // （都取 /state 的 agents[].activity === 'running'），两条指示不会互相矛盾。
       // 宽度：dock 条目渲染在输入框根容器的左右内边距**之外**，必须自己让出 `--dsh-composer-side-clearance` 并 `margin:0 auto` 居中；宽度上限还必须再取卡片自己的上限 `--dsh-composer-card-max-width`（否则在宽窗口下会无视卡片上限、左右各鼓出一段 —— 真机实测过 card 846 vs bar 948）。绝不能写 width:100%。 +
-      '.exp-subbusy{display:flex;align-items:center;gap:8px;box-sizing:border-box;flex:none;width:auto;min-width:0;max-width:min(calc(100% - var(--dsh-composer-side-clearance) - var(--dsh-composer-side-clearance)), var(--dsh-composer-card-max-width));margin:0 auto 4px;padding:1px 12px;border:1px solid #f0c36d;border-left:3px solid #e0a83c;border-radius:10px;background:linear-gradient(180deg,rgba(224,168,60,.13),var(--dsw-alias-bg-layer-1,#fff));color:#8a6100;font-size:12px;line-height:1.4}' +
+      '.exp-subbusy{display:flex;align-items:center;gap:8px;box-sizing:border-box;flex:none;width:auto;min-width:0;max-width:max(0px, min(calc(100% - var(--dsh-composer-side-clearance) * 2), var(--dsh-composer-card-max-width)));margin:0 auto 4px;padding:1px 12px;border:1px solid #f0c36d;border-left:3px solid #e0a83c;border-radius:10px;background:linear-gradient(180deg,rgba(224,168,60,.13),var(--dsw-alias-bg-layer-1,#fff));color:#8a6100;font-size:12px;line-height:1.4}' +
       '.exp-subbusy.on{cursor:pointer}' +
       '.exp-subbusy.on:hover{border-color:#d99b1f}' +
       '.exp-subbusy-dot{width:8px;height:8px;border-radius:50%;background:#e0a83c;flex:none;animation:exp-pulse 1.4s ease-in-out infinite}' +
@@ -437,7 +437,7 @@ window.__ModuleLoader__.load({
       '.exp-subbusy-who{color:#6a4a00;opacity:.9;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}' +
       '.exp-subbusy-go{margin-left:auto;flex:none;font-size:11.5px;font-weight:700;color:#8a6100;opacity:.75}' +
       // ── 项目链状态条（Dock）：只读、可点击打开面板；字段来自 /plugins/dsh-expert-team/project ──
-      '.exp-projbar{display:flex;align-items:center;gap:8px;box-sizing:border-box;width:auto;min-width:0;max-width:min(calc(100% - var(--dsh-composer-side-clearance) - var(--dsh-composer-side-clearance)), var(--dsh-composer-card-max-width));margin:0 auto 4px;padding:1px 12px;border:1px solid #d7dde6;border-left:3px solid #8fb3d9;border-radius:10px;background:var(--dsw-alias-bg-layer-1,#fff);color:#33475b;font-size:12px;line-height:1.4;cursor:pointer}' +
+      '.exp-projbar{display:flex;align-items:center;gap:8px;box-sizing:border-box;width:auto;min-width:0;max-width:max(0px, min(calc(100% - var(--dsh-composer-side-clearance) * 2), var(--dsh-composer-card-max-width)));margin:0 auto 4px;padding:1px 12px;border:1px solid #d7dde6;border-left:3px solid #8fb3d9;border-radius:10px;background:var(--dsw-alias-bg-layer-1,#fff);color:#33475b;font-size:12px;line-height:1.4;cursor:pointer}' +
       '.exp-projbar:hover{border-color:#8fb3d9}' +
       '.exp-projbar-stage{font-weight:700;flex:none}' +
       '.exp-projbar-dock{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:.9}' +
@@ -4028,12 +4028,35 @@ window.__ModuleLoader__.load({
 
     // ── 项目链只读状态（C5b）：dock 与驾驶舱顶部条共用**同一个** 10 秒时钟。 ──
     // 为什么共用：两个组件各自 setInterval 会把同一条轻量路由拉两遍；共用后只有一个定时器、一份数据。
-    var projectStore = { data: null, sid: '', timer: 0, subs: new Set() }
+    var projectStore = { data: null, sid: '', cwd: '', timer: 0, subs: new Set() }
+    // 空会话（宿主还没给 sessionId）时，用“最近一次会话的 cwd”兜底：
+    // 项目条按工作目录显示，没有 sid 不等于没有工作目录。
+    function recentSessionCwd() {
+      try {
+        var svc = ctxRoot && ctxRoot.sessions ? ctxRoot.sessions : null
+        var list = svc && svc.list && svc.list.getSnapshot ? svc.list.getSnapshot() : null
+        if (!list) return ''
+        var rows = list.byId || list.items || {}
+        var best = '', bestT = -1
+        var keys = Array.isArray(rows) ? rows.map(function (_, i) { return i }) : Object.keys(rows || {})
+        keys.forEach(function (k) {
+          var v = rows[k]
+          var h = (v && v.header) ? v.header : v
+          var c = h && (h.cwd || (h.options && h.options.cwd))
+          if (!c) return
+          var t = Date.parse(h.updatedAt || h.createdAt || '') || 0
+          if (t > bestT) { bestT = t; best = String(c) }
+        })
+        return best
+      } catch (e) { return '' }
+    }
     function projectFetch() {
       var sid = projectStore.sid
-      if (!sid || typeof fetch !== 'function') return
+      var cwd = projectStore.cwd
+      if ((!sid && !cwd) || typeof fetch !== 'function') return
       try {
-        fetch('/plugins/dsh-expert-team/project?sessionId=' + encodeURIComponent(sid), { credentials: 'same-origin' })
+        var url = '/plugins/dsh-expert-team/project?' + (sid ? 'sessionId=' + encodeURIComponent(sid) : 'cwd=' + encodeURIComponent(cwd))
+        fetch(url, { credentials: 'same-origin' })
           .then(function (r) { return r && r.ok ? r.json() : null })
           .then(function (d) {
             if (!d || !d.ok) return
@@ -4043,9 +4066,10 @@ window.__ModuleLoader__.load({
           .catch(function () {})
       } catch (e) {}
     }
-    function projectStart(sid) {
-      if (projectStore.timer && projectStore.sid === sid) return
-      projectStore.sid = sid
+    function projectStart(sid, cwd) {
+      if (projectStore.timer && projectStore.sid === (sid || '') && projectStore.cwd === (cwd || '')) return
+      projectStore.sid = sid || ''
+      projectStore.cwd = cwd || ''
       if (!projectStore.timer) projectStore.timer = setInterval(projectFetch, 10000)
       projectFetch()
     }
@@ -4053,15 +4077,15 @@ window.__ModuleLoader__.load({
       if (projectStore.subs.size) return
       if (projectStore.timer) { clearInterval(projectStore.timer); projectStore.timer = 0 }
     }
-    function useProjectState(sid) {
+    function useProjectState(sid, cwd) {
       var s = useState(projectStore.data); var data = s[0], setData = s[1]
       useEffect(function () {
-        if (!sid) return
+        if (!sid && !cwd) return
         function onData(d) { setData(d) }
         projectStore.subs.add(onData)
-        projectStart(sid)
+        projectStart(sid, cwd)
         return function () { projectStore.subs.delete(onData); projectStop() }
-      }, [sid])
+      }, [sid, cwd])
       return data
     }
 
@@ -4070,7 +4094,7 @@ window.__ModuleLoader__.load({
       ensureCss()
       var fallbackSid = useCurrentSessionId()
       var sid = (props && props.sessionId) || fallbackSid
-      var p = useProjectState(sid)
+      var p = useProjectState(sid, sid ? '' : recentSessionCwd())
       if (!p || !p.isProject) return null
       var steps = (p.steps || []).map(function (s) {
         var cls = 'exp-pjstep' + (s.ok ? (s.skipped ? ' skip' : ' ok') : ' miss')
@@ -4106,7 +4130,7 @@ window.__ModuleLoader__.load({
       ensureCss()
       var fallbackSid = useCurrentSessionId()
       var sid = (props && props.sessionId) || fallbackSid
-      var st = useProjectState(sid)
+      var st = useProjectState(sid, sid ? '' : recentSessionCwd())
       if (!st || !st.isProject) return null
       return h('div', {
         className: 'exp-projbar',
@@ -4310,7 +4334,7 @@ window.__ModuleLoader__.load({
         })
         // 项目链状态条：同一 dock 槽，order 190（排在子代理条之前，项目级信息优先）。
         ctx.slots.inject('conversation.input.dock', function () {
-          return ctx.slots.register({ name: 'conversation.input.dock', id: 'expert-team-project', order: 190 }, wrap(ProjectDock))
+          return ctx.slots.register({ name: 'conversation.input.dock', id: 'expert-team-project', order: 190, inject: function (sessionId) { return sessionId ? { sessionId: sessionId } : {} } }, wrap(ProjectDock))
         })
         ctx.slots.inject('shell.overlay', function () {
           return ctx.slots.register({ name: 'shell.overlay', id: 'expert-team-panel', order: 100 }, wrap(Panel))
