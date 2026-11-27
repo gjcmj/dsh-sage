@@ -7,6 +7,15 @@
 
 （暂无）
 
+## 1.9.9
+
+**主题：项目条按“输入框上可见的工作区”查询，不再被滞后的 sessionId 带偏**。
+
+### 修复
+
+- 新增 `selectedWorkspacePath()`：读工作区选择按钮的标题并用 `ctx.workspaces` 映射到绝对路径；项目条/面板优先用该 cwd 查询 `/project`。
+- 复现（自动化）：先在旧会话（sage）打开，再在 sample-app 新建空会话 —— 之前 dock 仍拿到旧 sessionId（`session-0087…`）导致 `isProject:false`、项目条不出现；现在按目录查询，项目条出现，点开后项目链完整。
+- 面板“读取中”只显示一句人话，键/数据/错误放进 `title`（不再暴露调试文本）。
 ## 1.9.8
 
 **主题：面板不再信任常驻壳层上过期的 `props.sessionId`**。

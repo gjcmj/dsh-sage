@@ -3939,6 +3939,36 @@ window.__ModuleLoader__.load({
      * 拿不到（宿主 API 形状变了）就回落到 HeaderButton 维护的会话 store —— 两种都拿不到
      * 就返回 null ⇒ 状态条不渲染（宁可不显示，也不显示"别人的会话"的子代理数）。
      */
+    /** 宿主工作区的**当前选择**（`uiWorkspace.selection`，持久化在 dsh.sessions.current）：
+     * 空会话也有 sessionId，比 `uiSession.current` 更可靠，用来避免退到“最近会话”的 cwd。 */
+    function useSelectedSessionId() {
+      var s = useState(function () {
+        try {
+          var w = ctxRoot && ctxRoot.uiWorkspace ? ctxRoot.uiWorkspace : null
+          var snap = w && w.selection && w.selection.getSnapshot ? w.selection.getSnapshot() : null
+          var v = snap && (snap.sessionId ? snap : (snap.value || null))
+          return (v && v.sessionId) ? String(v.sessionId) : null
+        } catch (e) { return null }
+      })
+      var sid = s[0], setSid = s[1]
+      useEffect(function () {
+        try {
+          var w = ctxRoot && ctxRoot.uiWorkspace ? ctxRoot.uiWorkspace : null
+          if (!w || !w.selection || typeof w.selection.subscribe !== 'function') return undefined
+          function pull() {
+            try {
+              var snap = w.selection.getSnapshot()
+              var v = snap && (snap.sessionId ? snap : (snap.value || null))
+              setSid((v && v.sessionId) ? String(v.sessionId) : null)
+            } catch (e) { setSid(null) }
+          }
+          pull()
+          return w.selection.subscribe(pull)
+        } catch (e) { return undefined }
+      }, [])
+      return sid
+    }
+
     function useCurrentSessionId() {
       var sid = useCurrentSession()
       var st = useState(function () {
@@ -4080,6 +4110,30 @@ window.__ModuleLoader__.load({
       if (projectStore.subs.size) return
       if (projectStore.timer) { clearInterval(projectStore.timer); projectStore.timer = 0 }
     }
+    /** 输入框上方「工作区」按钮当前显示的目录（可见 UI 的权威来源）。
+     * 空会话/切工作区时 sessionId 可能滞后于用户看到的文件夹，项目条必须跟文件夹一致。 */
+    function selectedWorkspacePath() {
+      try {
+        var svc = ctxRoot && ctxRoot.workspaces ? ctxRoot.workspaces : null
+        var snap = svc && svc.list && svc.list.getSnapshot ? svc.list.getSnapshot() : null
+        var items = snap && (snap.items || (Array.isArray(snap) ? snap : null))
+        if (!items) return ''
+        var btns = document.querySelectorAll('button')
+        var title = ''
+        for (var i = 0; i < btns.length; i++) {
+          var al = btns[i].getAttribute('aria-label') || ''
+          if (al.indexOf('选择工作区') < 0 && al.indexOf('workspace') < 0) continue
+          title = String(btns[i].innerText || '').trim()
+          if (title) break
+        }
+        if (!title) return ''
+        for (var j = 0; j < items.length; j++) {
+          if (String(items[j].title || '') === title && items[j].path) return String(items[j].path)
+        }
+      } catch (e) {}
+      return ''
+    }
+
     /** 解析项目查询键：**优先复用项目条已经解析的键**（sid 或 cwd），
      * 两者都没有时才退到宿主当前会话；绝不拿另一个会话去查（会把状态清空）。 */
     function resolveProjectKey(injectedSid, fallbackSid) {
@@ -4111,14 +4165,16 @@ window.__ModuleLoader__.load({
       // 面板与项目条必须用**同一个**键：面板没有 sid 时优先复用项目条已解析的键，
       // 不能各自用 useCurrentSessionId 猜（两者可能指向不同会话）。
       var key = resolveProjectKey(props && props.sessionId, fallbackSid)
+      var wsPath = selectedWorkspacePath()
+      if (wsPath) key = { sid: '', cwd: wsPath }
       var p = useProjectState(key.sid, key.cwd)
       // 读取中也不要留空面板：给出可读状态 + 诊断键（否则用户只看到“什么都没有”）。
       if (!p || !p.isProject) {
         var diag = t('项目状态读取中…', 'Reading project state…')
-          + ' · key=' + (key.sid ? 'sid:' + String(key.sid).slice(0, 12) : 'cwd:' + String(key.cwd).slice(-24))
+        var detail = 'key=' + (key.sid ? 'sid:' + String(key.sid).slice(0, 12) : 'cwd:' + String(key.cwd).slice(-24))
           + ' · data=' + (projectStore.data ? 'yes' : 'no')
           + (projectStore.lastErr ? ' · err=' + projectStore.lastErr.slice(0, 40) : '')
-        return h('div', { className: 'exp-projstrip', role: 'status' },
+        return h('div', { className: 'exp-projstrip', role: 'status', title: detail },
           h('div', { className: 'exp-projstrip-h' }, esc(diag)))
       }
       var steps = (p.steps || []).map(function (s) {
@@ -4153,8 +4209,10 @@ window.__ModuleLoader__.load({
     // ── 项目链状态条（C5）：一行常驻在输入框上方；只读、不写盘。 ──
     function ProjectDock(props) {
       ensureCss()
-      var fallbackSid = useCurrentSessionId()
+      var fallbackSid = useSelectedSessionId() || useCurrentSessionId()
       var key = resolveProjectKey(props && props.sessionId, fallbackSid)
+      var wsPath = selectedWorkspacePath()
+      if (wsPath) key = { sid: '', cwd: wsPath }
       var st = useProjectState(key.sid, key.cwd)
       if (!st || !st.isProject) return null
       return h('div', {
@@ -4298,7 +4356,7 @@ window.__ModuleLoader__.load({
     exports._live = { esc: esc, tierBadge: tierBadge, TIER_LABELS_ZH: TIER_LABELS_ZH, settingsFormModel: settingsFormModel, runHealthBadge: runHealthBadge }
     // 测试钩子（沿用 `_live` 的约定）：状态条的纯函数可脱离浏览器直接断言。
     exports._subagentBar = { subagentBarModel: subagentBarModel, runningSubagentIds: runningSubagentIds }
-    exports.inject = ['slots', 'sessions', 'remote', 'uiSession', 'uiConversation', 'locale']
+    exports.inject = ['slots', 'sessions', 'workspaces', 'remote', 'uiSession', 'uiWorkspace', 'uiConversation', 'locale']
     var ctxUISession = null
     // 宿主 ctx 本体：只给状态条**降级**取数用（标准 prop `useSessions` 拿不到时，退到
     // `ctx.sessions.list` 的同一份会话 store 快照）。声明位置与 `ctxUISession` 同理：
