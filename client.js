@@ -4406,7 +4406,10 @@ window.__ModuleLoader__.load({
         var cls = 'exp-pjrow' + (isOpen ? ' open' : '') + (ph.done ? ' done' : '') + (isNext ? ' next' : '')
         var summary = ''
         if (ph.id === 'discovery') summary = t('调研 ' + String((p.counts && p.counts.researchFiles) || 0) + ' 篇', 'research ' + String((p.counts && p.counts.researchFiles) || 0))
-        if (ph.id === 'prd' && prd.status && prd.status !== 'unknown') summary = t('门禁 ' + gatePass + '/' + gate.length, 'gate ' + gatePass + '/' + gate.length)
+        if (ph.id === 'prd' && prd.status && prd.status !== 'unknown') {
+          summary = t('门禁 ' + gatePass + '/' + gate.length, 'gate ' + gatePass + '/' + gate.length)
+            + ' · ' + t('草案 ' + (prd.draftOk ? '✓' : '–') + ' 定稿 ' + (prd.finalOk ? '✓' : '–'), 'draft ' + (prd.draftOk ? '✓' : '–') + ' final ' + (prd.finalOk ? '✓' : '–'))
+        }
         if (ph.id === 'dev') summary = t(String((p.counts && p.counts.teamRuns) || 0) + ' 个 run', String((p.counts && p.counts.teamRuns) || 0) + ' runs')
         var stCls = ph.skipped ? 'skip' : ph.done ? 'done' : (isNext ? 'next' : 'todo')
         var head = h('button', { className: 'exp-pjrow-h', onClick: function () { setOpenPhase(isOpen ? null : ph.id) }, 'aria-expanded': isOpen },
@@ -4419,17 +4422,7 @@ window.__ModuleLoader__.load({
           head, isOpen ? bodyOf(ph) : null)
       }
       var phases = p.phases || []
-      var core = phases.filter(function (ph) { return ph.id !== 'prototype' && ph.id !== 'tech-plan' })
-      var optional = phases.filter(function (ph) { return ph.id === 'prototype' || ph.id === 'tech-plan' })
-      var optionalHead = h('button', { className: 'exp-pjrow-h', onClick: function () { setOpenPhase(openPhase === 'optional' ? null : 'optional') }, 'aria-expanded': openPhase === 'optional' },
-        h('span', { className: 'exp-pjdot skip' }),
-        h('span', { className: 'exp-pjl' }, esc(t('原型 / 技术方案', 'prototype / tech plan'))),
-        h('span', { className: 'exp-pjs' }, esc(t('未启用（预设关闭）', 'disabled by preset')))
-      )
-      var optionalBody = openPhase === 'optional' ? h('div', { className: 'exp-pjbody' }, optional.map(function (ph) {
-        return h('div', { key: 'op-' + ph.id, className: 'exp-pjnote' }, esc(ph.label + ' · ' + statusWord(ph)))
-      })) : null
-      var optionalRow = optional.length ? h('div', { key: 'ph-opt', className: 'exp-pjrow opt' }, h('span', { className: 'exp-pjnode skip' }, '–'), optionalHead, optionalBody) : null
+      var optionalRow = null
       var badge = prd.finalOk ? t('PRD 定稿', 'PRD final') : (prd.status === 'draft' ? t('PRD 草案', 'PRD draft') : t('PRD 未开始', 'PRD none'))
       var badgeCls = 'exp-pjbadge' + (prd.finalOk ? ' final' : (prd.status === 'draft' ? ' draft' : ''))
       var previewBox = null
@@ -4447,7 +4440,7 @@ window.__ModuleLoader__.load({
         h('div', { className: 'exp-projstrip-h' },
           h('b', null, esc(t('项目流程', 'project flow') + ' · ' + (p.stageLabel || p.stage || ''))),
           h('span', { className: badgeCls }, esc(badge))),
-        h('div', { className: 'exp-pjrows' }, core.map(function (ph, i) { return rowOf(ph, i) }).concat([optionalRow]).filter(Boolean)),
+        h('div', { className: 'exp-pjrows' }, phases.map(function (ph, i) { return rowOf(ph, i) }).filter(Boolean)),
         previewBox,
         h('div', { className: 'exp-pjfoot' }, esc(foot))
       )
@@ -4471,17 +4464,14 @@ window.__ModuleLoader__.load({
         : t('下一步：定稿 PRD', 'next: finalize PRD')
       var phases = st.phases || []
       var nid = (phases.filter(function (x) { return !x.done && !x.skipped })[0] || {}).id
-      var core = phases.filter(function (x) { return x.id !== 'prototype' && x.id !== 'tech-plan' })
-      var opt = phases.filter(function (x) { return x.id === 'prototype' || x.id === 'tech-plan' })
       var flow = []
-      core.forEach(function (ph, i) {
+      phases.forEach(function (ph, i) {
         if (i) flow.push(h('span', { key: 'ar' + i, className: 'exp-pjmini-arrow' }, '→'))
         var cls = 'exp-pjmini ' + (ph.skipped ? 'skip' : ph.done ? 'done' : (ph.id === nid ? 'next' : 'todo'))
         var mark = ph.skipped ? '–' : ph.done ? '✓' : (ph.id === nid ? '◉' : '○')
-        var short = ph.id === 'kickoff' ? t('立项', 'kickoff') : ph.id === 'discovery' ? t('发现', 'discover') : ph.id === 'prd' ? 'PRD' : t('开发', 'dev')
+        var short = ph.id === 'kickoff' ? t('立项', 'kickoff') : ph.id === 'discovery' ? t('发现', 'discover') : ph.id === 'prd' ? 'PRD' : ph.id === 'prototype' ? t('原型', 'proto') : ph.id === 'tech-plan' ? t('方案', 'plan') : t('开发', 'dev')
         flow.push(h('span', { key: 'ph' + ph.id, className: cls }, esc(mark + ' ' + short)))
       })
-      if (opt.length) flow.push(h('span', { key: 'opt', className: 'exp-pjmini skip' }, esc(t('–原型·方案', '–proto·plan'))))
       return h('div', {
         className: 'exp-projbar exp-projbar2',
         role: 'status',
