@@ -4028,7 +4028,7 @@ window.__ModuleLoader__.load({
 
     // ── 项目链只读状态（C5b）：dock 与驾驶舱顶部条共用**同一个** 10 秒时钟。 ──
     // 为什么共用：两个组件各自 setInterval 会把同一条轻量路由拉两遍；共用后只有一个定时器、一份数据。
-    var projectStore = { data: null, sid: '', cwd: '', timer: 0, subs: new Set() }
+    var projectStore = { data: null, sid: '', cwd: '', timer: 0, subs: new Set(), lastErr: '' }
     // 空会话（宿主还没给 sessionId）时，用“最近一次会话的 cwd”兜底：
     // 项目条按工作目录显示，没有 sid 不等于没有工作目录。
     function recentSessionCwd() {
@@ -4059,7 +4059,7 @@ window.__ModuleLoader__.load({
         fetch(url, { credentials: 'same-origin' })
           .then(function (r) { return r && r.ok ? r.json() : null })
           .then(function (d) {
-            if (!d || !d.ok) return
+            if (!d || !d.ok) { projectStore.lastErr = 'http:' + (d && d.error ? d.error : 'not-ok'); return }
             // 迟到的响应不许覆盖另一个会话/工作区的数据（否则面板一开就可能把
             // 当前项目状态替换成“别的会话 ⇒ isProject:false”，项目条与项目链一起消失）。
             if (projectStore.sid !== (sid || '') || projectStore.cwd !== (cwd || '')) return
@@ -4109,9 +4109,15 @@ window.__ModuleLoader__.load({
       // 不能各自用 useCurrentSessionId 猜（两者可能指向不同会话）。
       var key = resolveProjectKey(props && props.sessionId, fallbackSid)
       var p = useProjectState(key.sid, key.cwd)
-      // 读取中也不要留空面板：给出可读状态（否则用户只看到“什么都没有”）。
-      if (!p || !p.isProject) return h('div', { className: 'exp-projstrip', role: 'status' },
-        h('div', { className: 'exp-projstrip-h' }, esc(t('项目状态读取中…', 'Reading project state…'))))
+      // 读取中也不要留空面板：给出可读状态 + 诊断键（否则用户只看到“什么都没有”）。
+      if (!p || !p.isProject) {
+        var diag = t('项目状态读取中…', 'Reading project state…')
+          + ' · key=' + (key.sid ? 'sid:' + String(key.sid).slice(0, 12) : 'cwd:' + String(key.cwd).slice(-24))
+          + ' · data=' + (projectStore.data ? 'yes' : 'no')
+          + (projectStore.lastErr ? ' · err=' + projectStore.lastErr.slice(0, 40) : '')
+        return h('div', { className: 'exp-projstrip', role: 'status' },
+          h('div', { className: 'exp-projstrip-h' }, esc(diag)))
+      }
       var steps = (p.steps || []).map(function (s) {
         var cls = 'exp-pjstep' + (s.ok ? (s.skipped ? ' skip' : ' ok') : ' miss')
         return h('span', { key: 'pj-' + s.id, className: cls, title: (s.missing && s.missing.length) ? s.missing.join('；') : (s.reason || '') },
